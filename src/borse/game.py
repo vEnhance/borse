@@ -32,6 +32,16 @@ MODE_NAMES: dict[GameMode, str] = {
     GameMode.SEMAPHORE: "Flag Semaphore",
 }
 
+# Keyboard shortcuts for modes
+MODE_SHORTCUTS: dict[str, GameMode] = {
+    "m": GameMode.MORSE,
+    "M": GameMode.MORSE,
+    "b": GameMode.BRAILLE,
+    "B": GameMode.BRAILLE,
+    "s": GameMode.SEMAPHORE,
+    "S": GameMode.SEMAPHORE,
+}
+
 
 class Game:
     """Main game class handling the curses UI."""
@@ -51,6 +61,9 @@ class Game:
         curses.use_default_colors()
         self.stdscr.keypad(True)
 
+        # Make ESC key respond instantly (reduce delay from 1000ms to 25ms)
+        curses.set_escdelay(25)
+
         # Initialize color pairs if available
         if curses.has_colors():
             curses.start_color()
@@ -59,7 +72,7 @@ class Game:
             curses.init_pair(3, curses.COLOR_CYAN, -1)  # Info
 
     def draw_title(self, title: str) -> int:
-        """Draw a title at the top of the screen.
+        """Draw a title at the top of the screen (left-aligned).
 
         Args:
             title: The title text.
@@ -68,12 +81,10 @@ class Game:
             The next available row.
         """
         self.stdscr.clear()
-        _height, width = self.stdscr.getmaxyx()
-        title_x = max(0, (width - len(title)) // 2)
         try:
             if curses.has_colors():
                 self.stdscr.attron(curses.color_pair(2) | curses.A_BOLD)
-            self.stdscr.addstr(1, title_x, title)
+            self.stdscr.addstr(1, 2, title)
             if curses.has_colors():
                 self.stdscr.attroff(curses.color_pair(2) | curses.A_BOLD)
         except curses.error:
@@ -88,7 +99,13 @@ class Game:
         """
         selected = 0
         modes = list(GameMode)
-        menu_items = [MODE_NAMES[m] for m in modes] + ["Quit"]
+        # Menu items with keyboard shortcuts shown
+        menu_items = [
+            "[M] Morse Code",
+            "[B] Braille",
+            "[S] Flag Semaphore",
+            "[Q] Quit",
+        ]
 
         while True:
             row = self.draw_title("BORSE - Code Practice Game")
@@ -128,11 +145,9 @@ class Game:
                     pass
 
             # Navigation hints
-            try:
+            with contextlib.suppress(curses.error):
                 hint_row = min(row + len(menu_items) + 2, height - 2)
-                self.stdscr.addstr(hint_row, 2, "Use arrow keys to navigate, Enter to select")
-            except curses.error:
-                pass
+                self.stdscr.addstr(hint_row, 2, "Use arrows + Enter, or press shortcut key")
 
             self.stdscr.refresh()
 
@@ -148,6 +163,14 @@ class Game:
                 return None
             elif key == ord("q") or key == ord("Q"):
                 return None
+            else:
+                # Check for shortcut keys
+                try:
+                    char = chr(key)
+                    if char in MODE_SHORTCUTS:
+                        return MODE_SHORTCUTS[char]
+                except (ValueError, OverflowError):
+                    pass
 
     def play_game(self, mode: GameMode) -> None:
         """Play a game session in the given mode.
@@ -159,6 +182,7 @@ class Game:
         mode_name = MODE_NAMES[mode]
         words_completed = 0
         total_words = self.config.words_per_game
+        completed_words: list[str] = []  # Track completed words
 
         while words_completed < total_words:
             word = get_random_word()
@@ -176,33 +200,58 @@ class Game:
 
                 row += len(display_lines) + 2
 
-                # Input prompt
+                # Input prompt - show user input in UPPERCASE
+                input_row = row
                 try:
                     self.stdscr.addstr(row, 2, "Type the word: ")
-                    # Show user input with cursor
                     input_start = 17
-                    self.stdscr.addstr(row, input_start, user_input)
+                    display_input = user_input.upper()
+                    self.stdscr.addstr(row, input_start, display_input)
 
                     # Show correct characters in green
                     for i, char in enumerate(user_input):
                         if i < len(word) and char.lower() == word[i].lower():
                             if curses.has_colors():
                                 self.stdscr.attron(curses.color_pair(1))
-                            self.stdscr.addstr(row, input_start + i, char)
+                            self.stdscr.addstr(row, input_start + i, char.upper())
+                            if curses.has_colors():
+                                self.stdscr.attroff(curses.color_pair(1))
+                except curses.error:
+                    pass
+
+                row += 2
+
+                # Instructions
+                with contextlib.suppress(curses.error):
+                    self.stdscr.addstr(row, 2, "Press Esc to return to menu")
+
+                row += 2
+
+                # Show completed words in green at the bottom
+                if completed_words:
+                    try:
+                        # Calculate available space
+                        available_rows = height - row - 1
+                        if available_rows > 0:
+                            if curses.has_colors():
+                                self.stdscr.attron(curses.color_pair(1))
+                            self.stdscr.addstr(row, 2, "Completed: ")
                             if curses.has_colors():
                                 self.stdscr.attroff(curses.color_pair(1))
 
-                    # Position cursor
-                    self.stdscr.move(row, input_start + len(user_input))
-                except curses.error:
-                    pass
+                            # Join words with commas, fitting on available lines
+                            words_str = ", ".join(w.upper() for w in completed_words)
+                            if curses.has_colors():
+                                self.stdscr.attron(curses.color_pair(1))
+                            self.stdscr.addstr(row, 13, words_str[: _width - 15])
+                            if curses.has_colors():
+                                self.stdscr.attroff(curses.color_pair(1))
+                    except curses.error:
+                        pass
 
-                # Instructions
-                try:
-                    hint_row = min(row + 3, height - 2)
-                    self.stdscr.addstr(hint_row, 2, "Press Esc to return to menu")
-                except curses.error:
-                    pass
+                # Position cursor at the typing location
+                with contextlib.suppress(curses.error):
+                    self.stdscr.move(input_row, input_start + len(user_input))
 
                 self.stdscr.refresh()
 
@@ -212,28 +261,32 @@ class Game:
                     return
                 elif key in (curses.KEY_BACKSPACE, 127, 8):
                     user_input = user_input[:-1]
-                elif key >= 32 and key <= 126:  # Printable characters
+                elif 32 <= key <= 126:  # Printable characters
                     user_input += chr(key)
 
                     # Check if word matches
                     if user_input.lower() == word.lower():
                         words_completed += 1
+                        completed_words.append(word)
                         self.progress.add_word(mode.value)
                         save_progress(self.progress, self.config.progress_file)
                         break
 
         # Show completion message
-        self.show_completion(mode, words_completed)
+        self.show_completion(mode, words_completed, completed_words)
 
-    def show_completion(self, mode: GameMode, words_completed: int) -> None:
+    def show_completion(
+        self, mode: GameMode, words_completed: int, completed_words: list[str]
+    ) -> None:
         """Show completion screen.
 
         Args:
             mode: The game mode that was played.
             words_completed: Number of words completed.
+            completed_words: List of completed words.
         """
         row = self.draw_title("Session Complete!")
-        _height, _width = self.stdscr.getmaxyx()
+        height, width = self.stdscr.getmaxyx()
 
         try:
             if curses.has_colors():
@@ -246,8 +299,26 @@ class Game:
             today = self.progress.get_today()
             self.stdscr.addstr(row, 2, f"Today's total: {today.total_words} words")
 
-            row += 3
-            self.stdscr.addstr(row, 2, "Press any key to continue...")
+            row += 2
+
+            # Show all completed words
+            if completed_words:
+                self.stdscr.addstr(row, 2, "Words completed:")
+                row += 1
+                if curses.has_colors():
+                    self.stdscr.attron(curses.color_pair(1))
+                words_str = ", ".join(w.upper() for w in completed_words)
+                # Wrap if needed
+                max_width = width - 4
+                for i in range(0, len(words_str), max_width):
+                    if row < height - 3:
+                        self.stdscr.addstr(row, 2, words_str[i : i + max_width])
+                        row += 1
+                if curses.has_colors():
+                    self.stdscr.attroff(curses.color_pair(1))
+
+            row = max(row + 1, height - 3)
+            self.stdscr.addstr(min(row, height - 2), 2, "Press any key to continue...")
         except curses.error:
             pass
 

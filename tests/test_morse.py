@@ -46,12 +46,12 @@ class TestEncodeWord:
 
     def test_encode_sos(self) -> None:
         """Test encoding 'SOS'."""
-        expected = f"{DOT}{DOT}{DOT}   {DASH}{DASH}{DASH}   {DOT}{DOT}{DOT}"
+        expected = f"{DOT}{DOT}{DOT}     {DASH}{DASH}{DASH}     {DOT}{DOT}{DOT}"
         assert encode_word("SOS") == expected
 
     def test_encode_with_spaces(self) -> None:
         """Test that spaces in input are ignored."""
-        assert encode_word("A B") == f"{DOT}{DASH}   {DASH}{DOT}{DOT}{DOT}"
+        assert encode_word("A B") == f"{DOT}{DASH}     {DASH}{DOT}{DOT}{DOT}"
 
     def test_encode_empty(self) -> None:
         """Test encoding empty string."""

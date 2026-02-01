@@ -96,7 +96,7 @@ def get_display_lines(word: str) -> list[str]:
     # Combine all characters horizontally with space between
     lines = []
     for row in range(3):
-        line = "  ".join(char[row] for char in chars)
+        line = "   ".join(char[row] for char in chars)
         lines.append(line)
 
     return lines

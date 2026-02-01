@@ -70,7 +70,7 @@ def encode_word(word: str) -> str:
     Returns:
         The Morse code representation with spaces between letters.
     """
-    return "   ".join(encode_char(c) for c in word if c.upper() in MORSE_CODE)
+    return "     ".join(encode_char(c) for c in word if c.upper() in MORSE_CODE)
 
 
 def get_display_lines(word: str) -> list[str]:
