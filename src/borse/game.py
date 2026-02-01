@@ -110,7 +110,7 @@ class Game:
             "[M] Morse Code",
             "[S] Semaphore",
             "[A] A1Z26",
-            "[O] Settings",
+            "[O] Options",            
             "[Q] Quit",
         ]
 
