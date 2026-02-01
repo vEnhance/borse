@@ -6,7 +6,7 @@ from collections.abc import Callable
 from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
-from borse.config import load_config
+from borse.config import load_config, save_config
 from borse.progress import load_progress, save_progress
 from borse.words import get_random_word_or_letter
 
@@ -18,6 +18,10 @@ class GameMode(Enum):
     MORSE = "morse"
     SEMAPHORE = "semaphore"
     A1Z26 = "a1z26"
+
+
+class SettingsMode(Enum):
+    SETTINGS = "settings"
 
 
 # Map modes to their display functions
@@ -96,11 +100,11 @@ class Game:
             pass
         return 3
 
-    def show_menu(self) -> GameMode | None:
+    def show_menu(self) -> GameMode | SettingsMode | None:
         """Show the main menu and get mode selection.
 
         Returns:
-            Selected GameMode or None to quit.
+            Selected GameMode, "settings" for settings menu, or None to quit.
         """
         selected = 0
         modes = list(GameMode)
@@ -110,12 +114,13 @@ class Game:
             "[M] Morse Code",
             "[S] Semaphore",
             "[A] A1Z26",
+            "[O] Options",
             "[Q] Quit",
         ]
 
         while True:
             row = self.draw_title("BORSE - Code Practice Game")
-            height, _width = self.stdscr.getmaxyx()
+            height, _ = self.stdscr.getmaxyx()
 
             # Show today's progress
             today = self.progress.get_today()
@@ -169,9 +174,13 @@ class Game:
             elif key in (curses.KEY_ENTER, 10, 13):
                 if selected < len(modes):
                     return modes[selected]
-                return None
+                elif selected == len(modes):  # Settings
+                    return SettingsMode.SETTINGS
+                return None  # Quit
             elif key == ord("q") or key == ord("Q"):
                 return None
+            elif key == ord("o") or key == ord("O"):
+                return SettingsMode.SETTINGS
             else:
                 # Check for shortcut keys
                 try:
@@ -213,9 +222,9 @@ class Game:
 
                 # Input prompt - show user input in UPPERCASE
                 input_row = row
+                input_start = 17
                 try:
                     self.stdscr.addstr(row, 2, "Type the word: ")
-                    input_start = 17
                     display_input = user_input.upper()
                     self.stdscr.addstr(row, input_start, display_input)
 
@@ -286,6 +295,109 @@ class Game:
         # Show completion message
         self.show_completion(mode, words_completed, completed_words)
 
+    def show_settings(self) -> None:
+        """Show the settings menu for editing configuration."""
+        selected = 0
+        settings_items = [
+            "words_per_game",
+            "single_letter_probability",
+        ]
+        editing: int | None = None
+        edit_buffer = ""
+
+        while True:
+            row = self.draw_title("Settings")
+
+            # Instructions
+            with contextlib.suppress(curses.error):
+                self.stdscr.addstr(row, 2, "Edit game settings:")
+            row += 2
+
+            # Setting items
+            for i, setting in enumerate(settings_items):
+                try:
+                    value = getattr(self.config, setting)
+                    if setting == "single_letter_probability":
+                        display_value = f"{value:.0%}"
+                    else:
+                        display_value = str(value)
+
+                    if editing == i:
+                        # Show edit mode
+                        label = f"  {setting}: "
+                        self.stdscr.addstr(row + i, 4, label)
+                        self.stdscr.attron(curses.A_UNDERLINE)
+                        self.stdscr.addstr(row + i, 4 + len(label), edit_buffer + "_")
+                        self.stdscr.attroff(curses.A_UNDERLINE)
+                    else:
+                        label = f"  {setting}: {display_value}  "
+                        if i == selected:
+                            self.stdscr.attron(curses.A_REVERSE)
+                        self.stdscr.addstr(row + i, 4, label)
+                        if i == selected:
+                            self.stdscr.attroff(curses.A_REVERSE)
+                except curses.error:
+                    pass
+
+            row += len(settings_items) + 2
+
+            # Navigation hints
+            with contextlib.suppress(curses.error):
+                if editing is not None:
+                    self.stdscr.addstr(row, 2, "Enter: save, Esc: cancel")
+                else:
+                    self.stdscr.addstr(row, 2, "Enter: edit, Esc: back to menu")
+
+            self.stdscr.refresh()
+
+            key = self.stdscr.getch()
+
+            if editing is not None:
+                # Edit mode
+                if key == 27:  # Escape - cancel edit
+                    editing = None
+                    edit_buffer = ""
+                elif key in (curses.KEY_ENTER, 10, 13):  # Enter - save
+                    try:
+                        setting = settings_items[editing]
+                        if setting == "words_per_game":
+                            new_value = int(edit_buffer)
+                            if new_value > 0:
+                                self.config.words_per_game = new_value
+                        elif setting == "single_letter_probability":
+                            # Accept both decimal (0.3) and percentage (30)
+                            val = float(edit_buffer)
+                            if val > 1:
+                                val = val / 100
+                            if 0 <= val <= 1:
+                                self.config.single_letter_probability = val
+                        save_config(self.config)
+                    except ValueError:
+                        pass  # Invalid input, ignore
+                    editing = None
+                    edit_buffer = ""
+                elif key in (curses.KEY_BACKSPACE, 127, 8):
+                    edit_buffer = edit_buffer[:-1]
+                elif 32 <= key <= 126:  # Printable characters
+                    edit_buffer += chr(key)
+            else:
+                # Navigation mode
+                if key == 27:  # Escape - back to menu
+                    return
+                elif key == curses.KEY_UP:
+                    selected = (selected - 1) % len(settings_items)
+                elif key == curses.KEY_DOWN:
+                    selected = (selected + 1) % len(settings_items)
+                elif key in (curses.KEY_ENTER, 10, 13):
+                    editing = selected
+                    # Pre-fill with current value
+                    setting = settings_items[selected]
+                    value = getattr(self.config, setting)
+                    if setting == "single_letter_probability":
+                        edit_buffer = str(int(value * 100))
+                    else:
+                        edit_buffer = str(value)
+
     def show_completion(
         self, mode: GameMode, words_completed: int, completed_words: list[str]
     ) -> None:
@@ -341,10 +453,13 @@ class Game:
     def run(self) -> None:
         """Run the main game loop."""
         while True:
-            mode = self.show_menu()
-            if mode is None:
+            result = self.show_menu()
+            if result is None:
                 break
-            self.play_game(mode)
+            elif isinstance(result, SettingsMode):
+                self.show_settings()
+            else:
+                self.play_game(result)
 
 
 def run_game(stdscr: curses.window) -> None:

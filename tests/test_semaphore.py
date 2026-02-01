@@ -53,7 +53,9 @@ class TestEncodeWord:
         result = encode_word("HI")
         assert len(result) == 2  # Two characters
         assert all(len(char) == 5 for char in result)  # Each has 5 rows
-        assert all(len(row) == 7 for char in result for row in char)  # Each row is 7 chars
+        assert all(
+            len(row) == 7 for char in result for row in char
+        )  # Each row is 7 chars
 
     def test_encode_empty(self) -> None:
         """Test encoding empty string."""
