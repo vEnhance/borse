@@ -5,7 +5,7 @@ import curses
 from collections.abc import Callable
 from enum import Enum
 
-from borse import braille, morse, semaphore
+from borse import a1z26, braille, morse, semaphore
 from borse.config import load_config
 from borse.progress import load_progress, save_progress
 from borse.words import get_random_word
@@ -17,6 +17,7 @@ class GameMode(Enum):
     MORSE = "morse"
     BRAILLE = "braille"
     SEMAPHORE = "semaphore"
+    A1Z26 = "a1z26"
 
 
 # Map modes to their display functions
@@ -24,12 +25,14 @@ MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
     GameMode.MORSE: morse.get_display_lines,
     GameMode.BRAILLE: braille.get_display_lines,
     GameMode.SEMAPHORE: semaphore.get_display_lines,
+    GameMode.A1Z26: a1z26.get_display_lines,
 }
 
 MODE_NAMES: dict[GameMode, str] = {
     GameMode.MORSE: "Morse Code",
     GameMode.BRAILLE: "Braille",
     GameMode.SEMAPHORE: "Flag Semaphore",
+    GameMode.A1Z26: "A1Z26",
 }
 
 # Keyboard shortcuts for modes
@@ -40,6 +43,8 @@ MODE_SHORTCUTS: dict[str, GameMode] = {
     "B": GameMode.BRAILLE,
     "s": GameMode.SEMAPHORE,
     "S": GameMode.SEMAPHORE,
+    "a": GameMode.A1Z26,
+    "A": GameMode.A1Z26,
 }
 
 
@@ -104,6 +109,7 @@ class Game:
             "[M] Morse Code",
             "[B] Braille",
             "[S] Flag Semaphore",
+            "[A] A1Z26",
             "[Q] Quit",
         ]
 
@@ -115,7 +121,8 @@ class Game:
             today = self.progress.get_today()
             progress_text = (
                 f"Today: {today.total_words} words "
-                f"(M:{today.morse_words} B:{today.braille_words} S:{today.semaphore_words})"
+                f"(M:{today.morse_words} B:{today.braille_words} "
+                f"S:{today.semaphore_words} A:{today.a1z26_words})"
             )
             try:
                 if curses.has_colors():

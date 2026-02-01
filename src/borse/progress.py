@@ -14,11 +14,13 @@ class DailyProgress:
         morse_words: Number of Morse code words answered.
         braille_words: Number of Braille words answered.
         semaphore_words: Number of semaphore words answered.
+        a1z26_words: Number of A1Z26 words answered.
     """
 
     morse_words: int = 0
     braille_words: int = 0
     semaphore_words: int = 0
+    a1z26_words: int = 0
 
     @property
     def total_words(self) -> int:
@@ -27,7 +29,7 @@ class DailyProgress:
         Returns:
             Sum of all words across all modes.
         """
-        return self.morse_words + self.braille_words + self.semaphore_words
+        return self.morse_words + self.braille_words + self.semaphore_words + self.a1z26_words
 
     def to_dict(self) -> dict[str, int]:
         """Convert to dictionary.
@@ -39,6 +41,7 @@ class DailyProgress:
             "morse_words": self.morse_words,
             "braille_words": self.braille_words,
             "semaphore_words": self.semaphore_words,
+            "a1z26_words": self.a1z26_words,
         }
 
     @classmethod
@@ -55,6 +58,7 @@ class DailyProgress:
             morse_words=data.get("morse_words", 0),
             braille_words=data.get("braille_words", 0),
             semaphore_words=data.get("semaphore_words", 0),
+            a1z26_words=data.get("a1z26_words", 0),
         )
 
 
@@ -83,7 +87,7 @@ class Progress:
         """Add a completed word for today.
 
         Args:
-            mode: The game mode ('morse', 'braille', or 'semaphore').
+            mode: The game mode ('morse', 'braille', 'semaphore', or 'a1z26').
         """
         today = self.get_today()
         if mode == "morse":
@@ -92,6 +96,8 @@ class Progress:
             today.braille_words += 1
         elif mode == "semaphore":
             today.semaphore_words += 1
+        elif mode == "a1z26":
+            today.a1z26_words += 1
 
     def to_dict(self) -> dict[str, dict[str, dict[str, int]]]:
         """Convert to dictionary.
