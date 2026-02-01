@@ -16,25 +16,32 @@ class TestDailyProgress:
         assert progress.morse_words == 0
         assert progress.braille_words == 0
         assert progress.semaphore_words == 0
+        assert progress.a1z26_words == 0
 
     def test_total_words(self) -> None:
         """Test total_words property."""
-        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2)
-        assert progress.total_words == 10
+        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1)
+        assert progress.total_words == 11
 
     def test_to_dict(self) -> None:
         """Test converting to dictionary."""
-        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2)
+        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1)
         data = progress.to_dict()
-        assert data == {"morse_words": 5, "braille_words": 3, "semaphore_words": 2}
+        assert data == {
+            "morse_words": 5,
+            "braille_words": 3,
+            "semaphore_words": 2,
+            "a1z26_words": 1,
+        }
 
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
-        data = {"morse_words": 5, "braille_words": 3, "semaphore_words": 2}
+        data = {"morse_words": 5, "braille_words": 3, "semaphore_words": 2, "a1z26_words": 1}
         progress = DailyProgress.from_dict(data)
         assert progress.morse_words == 5
         assert progress.braille_words == 3
         assert progress.semaphore_words == 2
+        assert progress.a1z26_words == 1
 
 
 class TestProgress:
@@ -72,6 +79,12 @@ class TestProgress:
         progress = Progress()
         progress.add_word("semaphore")
         assert progress.get_today().semaphore_words == 1
+
+    def test_add_word_a1z26(self) -> None:
+        """Test adding an A1Z26 word."""
+        progress = Progress()
+        progress.add_word("a1z26")
+        assert progress.get_today().a1z26_words == 1
 
     def test_to_dict(self) -> None:
         """Test converting to dictionary."""
