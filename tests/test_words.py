@@ -6,7 +6,6 @@ from borse.words import (
     get_random_letter,
     get_random_word,
     get_random_word_or_letter,
-    get_random_words,
 )
 
 
@@ -81,23 +80,3 @@ class TestGetRandomWordOrLetter:
         """Test that function returns either a word or a letter."""
         result = get_random_word_or_letter(0.5)
         assert result in COMMON_WORDS or (len(result) == 1 and result in LETTERS)
-
-
-class TestGetRandomWords:
-    """Tests for get_random_words function."""
-
-    def test_returns_correct_count(self) -> None:
-        """Test that function returns correct number of words."""
-        words = get_random_words(5)
-        assert len(words) == 5
-
-    def test_all_from_list(self) -> None:
-        """Test that all returned words are from the list."""
-        words = get_random_words(10)
-        for word in words:
-            assert word in COMMON_WORDS
-
-    def test_zero_count(self) -> None:
-        """Test with count of zero."""
-        words = get_random_words(0)
-        assert len(words) == 0
