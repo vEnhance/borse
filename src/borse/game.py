@@ -14,33 +14,33 @@ from borse.words import get_random_word_or_letter
 class GameMode(Enum):
     """Game mode enumeration."""
 
-    MORSE = "morse"
     BRAILLE = "braille"
+    MORSE = "morse"
     SEMAPHORE = "semaphore"
     A1Z26 = "a1z26"
 
 
 # Map modes to their display functions
 MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
-    GameMode.MORSE: morse.get_display_lines,
     GameMode.BRAILLE: braille.get_display_lines,
+    GameMode.MORSE: morse.get_display_lines,
     GameMode.SEMAPHORE: semaphore.get_display_lines,
     GameMode.A1Z26: a1z26.get_display_lines,
 }
 
 MODE_NAMES: dict[GameMode, str] = {
-    GameMode.MORSE: "Morse Code",
     GameMode.BRAILLE: "Braille",
+    GameMode.MORSE: "Morse Code",
     GameMode.SEMAPHORE: "Flag Semaphore",
     GameMode.A1Z26: "A1Z26",
 }
 
 # Keyboard shortcuts for modes
 MODE_SHORTCUTS: dict[str, GameMode] = {
-    "m": GameMode.MORSE,
-    "M": GameMode.MORSE,
     "b": GameMode.BRAILLE,
     "B": GameMode.BRAILLE,
+    "m": GameMode.MORSE,
+    "M": GameMode.MORSE,
     "s": GameMode.SEMAPHORE,
     "S": GameMode.SEMAPHORE,
     "a": GameMode.A1Z26,
@@ -106,8 +106,8 @@ class Game:
         modes = list(GameMode)
         # Menu items with keyboard shortcuts shown
         menu_items = [
-            "[M] Morse Code",
             "[B] Braille",
+            "[M] Morse Code",
             "[S] Flag Semaphore",
             "[A] A1Z26",
             "[Q] Quit",
@@ -121,7 +121,7 @@ class Game:
             today = self.progress.get_today()
             progress_text = (
                 f"Today: {today.total_words} words "
-                f"(M:{today.morse_words} B:{today.braille_words} "
+                f"(B:{today.braille_words} M:{today.morse_words} "
                 f"S:{today.semaphore_words} A:{today.a1z26_words})"
             )
             try:
@@ -154,7 +154,7 @@ class Game:
             # Navigation hints
             with contextlib.suppress(curses.error):
                 hint_row = min(row + len(menu_items) + 2, height - 2)
-                self.stdscr.addstr(hint_row, 2, "Use arrows + Enter, or press shortcut key")
+                self.stdscr.addstr(hint_row, 2, "Use arrows + Enter, or press shortcut key.")
 
             self.stdscr.refresh()
 
