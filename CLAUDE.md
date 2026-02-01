@@ -35,6 +35,7 @@ uv run ty check src        # Type check
 ## Configuration
 
 User config stored in `~/.config/borse/config.json`:
+
 - `progress_file`: Path to progress JSON file
 - `words_per_game`: Number of words per session (default: 10)
 

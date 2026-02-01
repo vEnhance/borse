@@ -20,12 +20,16 @@ class TestDailyProgress:
 
     def test_total_words(self) -> None:
         """Test total_words property."""
-        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1)
+        progress = DailyProgress(
+            morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1
+        )
         assert progress.total_words == 11
 
     def test_to_dict(self) -> None:
         """Test converting to dictionary."""
-        progress = DailyProgress(morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1)
+        progress = DailyProgress(
+            morse_words=5, braille_words=3, semaphore_words=2, a1z26_words=1
+        )
         data = progress.to_dict()
         assert data == {
             "morse_words": 5,
@@ -36,7 +40,12 @@ class TestDailyProgress:
 
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
-        data = {"morse_words": 5, "braille_words": 3, "semaphore_words": 2, "a1z26_words": 1}
+        data = {
+            "morse_words": 5,
+            "braille_words": 3,
+            "semaphore_words": 2,
+            "a1z26_words": 1,
+        }
         progress = DailyProgress.from_dict(data)
         assert progress.morse_words == 5
         assert progress.braille_words == 3
@@ -98,7 +107,11 @@ class TestProgress:
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
         today_str = date.today().isoformat()
-        data = {"daily": {today_str: {"morse_words": 5, "braille_words": 3, "semaphore_words": 2}}}
+        data = {
+            "daily": {
+                today_str: {"morse_words": 5, "braille_words": 3, "semaphore_words": 2}
+            }
+        }
         progress = Progress.from_dict(data)
         today = progress.get_today()
         assert today.morse_words == 5

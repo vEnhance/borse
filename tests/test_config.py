@@ -19,7 +19,9 @@ class TestConfig:
     def test_to_dict(self) -> None:
         """Test converting config to dictionary."""
         config = Config(
-            progress_file="/custom/path.json", words_per_game=20, single_letter_probability=0.5
+            progress_file="/custom/path.json",
+            words_per_game=20,
+            single_letter_probability=0.5,
         )
         data = config.to_dict()
         assert data["progress_file"] == "/custom/path.json"

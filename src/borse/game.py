@@ -154,7 +154,9 @@ class Game:
             # Navigation hints
             with contextlib.suppress(curses.error):
                 hint_row = min(row + len(menu_items) + 2, height - 2)
-                self.stdscr.addstr(hint_row, 2, "Use arrows + Enter, or press shortcut key.")
+                self.stdscr.addstr(
+                    hint_row, 2, "Use arrows + Enter, or press shortcut key."
+                )
 
             self.stdscr.refresh()
 
@@ -196,7 +198,9 @@ class Game:
             user_input = ""
 
             while True:
-                row = self.draw_title(f"{mode_name} - Word {words_completed + 1}/{total_words}")
+                row = self.draw_title(
+                    f"{mode_name} - Word {words_completed + 1}/{total_words}"
+                )
                 height, _width = self.stdscr.getmaxyx()
 
                 # Display the encoded word
@@ -298,7 +302,9 @@ class Game:
         try:
             if curses.has_colors():
                 self.stdscr.attron(curses.color_pair(1))
-            self.stdscr.addstr(row, 2, f"You completed {words_completed} {MODE_NAMES[mode]} words!")
+            self.stdscr.addstr(
+                row, 2, f"You completed {words_completed} {MODE_NAMES[mode]} words!"
+            )
             if curses.has_colors():
                 self.stdscr.attroff(curses.color_pair(1))
 

@@ -59,7 +59,7 @@ class Config:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | int | float]) -> "Config":
+    def from_dict(cls, data: dict[str, str | int | float]) -> Config:
         """Create config from dictionary.
 
         Args:
@@ -69,7 +69,9 @@ class Config:
             Config instance.
         """
         return cls(
-            progress_file=str(data.get("progress_file", str(get_default_progress_path()))),
+            progress_file=str(
+                data.get("progress_file", str(get_default_progress_path()))
+            ),
             words_per_game=int(data.get("words_per_game", 10)),
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),
         )

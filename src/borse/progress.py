@@ -29,7 +29,12 @@ class DailyProgress:
         Returns:
             Sum of all words across all modes.
         """
-        return self.morse_words + self.braille_words + self.semaphore_words + self.a1z26_words
+        return (
+            self.morse_words
+            + self.braille_words
+            + self.semaphore_words
+            + self.a1z26_words
+        )
 
     def to_dict(self) -> dict[str, int]:
         """Convert to dictionary.
@@ -45,7 +50,7 @@ class DailyProgress:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, int]) -> "DailyProgress":
+    def from_dict(cls, data: dict[str, int]) -> DailyProgress:
         """Create from dictionary.
 
         Args:
@@ -108,7 +113,7 @@ class Progress:
         return {"daily": {k: v.to_dict() for k, v in self.daily.items()}}
 
     @classmethod
-    def from_dict(cls, data: dict[str, dict[str, dict[str, int]]]) -> "Progress":
+    def from_dict(cls, data: dict[str, dict[str, dict[str, int]]]) -> Progress:
         """Create from dictionary.
 
         Args:
