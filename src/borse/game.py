@@ -20,6 +20,10 @@ class GameMode(Enum):
     A1Z26 = "a1z26"
 
 
+class SettingsMode(Enum):
+    SETTINGS = "settings"
+
+
 # Map modes to their display functions
 MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
     GameMode.BRAILLE: braille.get_display_lines,
@@ -96,7 +100,7 @@ class Game:
             pass
         return 3
 
-    def show_menu(self) -> GameMode | str | None:
+    def show_menu(self) -> GameMode | SettingsMode | None:
         """Show the main menu and get mode selection.
 
         Returns:
@@ -171,12 +175,12 @@ class Game:
                 if selected < len(modes):
                     return modes[selected]
                 elif selected == len(modes):  # Settings
-                    return "settings"
+                    return SettingsMode.SETTINGS
                 return None  # Quit
             elif key == ord("q") or key == ord("Q"):
                 return None
             elif key == ord("o") or key == ord("O"):
-                return "settings"
+                return SettingsMode.SETTINGS
             else:
                 # Check for shortcut keys
                 try:
@@ -453,7 +457,7 @@ class Game:
             result = self.show_menu()
             if result is None:
                 break
-            elif result == "settings":
+            elif isinstance(result, SettingsMode):
                 self.show_settings()
             else:
                 self.play_game(result)
