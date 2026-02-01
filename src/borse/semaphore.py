@@ -34,7 +34,7 @@ SEMAPHORE_POSITIONS: dict[str, tuple[int, int]] = {
     "S": (2, 7),
     "T": (3, 4),
     "U": (3, 5),
-    "V": (4, 0),
+    "V": (4, 7),
     "W": (5, 6),
     "X": (5, 7),
     "Y": (3, 6),
