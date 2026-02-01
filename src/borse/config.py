@@ -1,8 +1,16 @@
 """Configuration management for Borse."""
 
-import json
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
+
+import tomli_w
 
 
 def get_default_config_dir() -> Path:
@@ -18,9 +26,9 @@ def get_default_config_path() -> Path:
     """Get the default configuration file path.
 
     Returns:
-        Path to the configuration file (~/.config/borse/config.json).
+        Path to the configuration file (~/.config/borse/config.toml).
     """
-    return get_default_config_dir() / "config.json"
+    return get_default_config_dir() / "config.toml"
 
 
 def get_default_progress_path() -> Path:
@@ -81,7 +89,7 @@ def load_config(config_path: Path | None = None) -> Config:
     """Load configuration from file.
 
     Args:
-        config_path: Path to config file. Defaults to ~/.config/borse/config.json.
+        config_path: Path to config file. Defaults to ~/.config/borse/config.toml.
 
     Returns:
         Config instance with loaded or default values.
@@ -93,10 +101,10 @@ def load_config(config_path: Path | None = None) -> Config:
         return Config()
 
     try:
-        with open(config_path) as f:
-            data = json.load(f)
+        with open(config_path, "rb") as f:
+            data = tomllib.load(f)
         return Config.from_dict(data)
-    except (json.JSONDecodeError, OSError):
+    except (tomllib.TOMLDecodeError, OSError):
         return Config()
 
 
@@ -105,7 +113,7 @@ def save_config(config: Config, config_path: Path | None = None) -> None:
 
     Args:
         config: Config instance to save.
-        config_path: Path to config file. Defaults to ~/.config/borse/config.json.
+        config_path: Path to config file. Defaults to ~/.config/borse/config.toml.
     """
     if config_path is None:
         config_path = get_default_config_path()
@@ -113,5 +121,5 @@ def save_config(config: Config, config_path: Path | None = None) -> None:
     # Ensure directory exists
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(config_path, "w") as f:
-        json.dump(config.to_dict(), f, indent=2)
+    with open(config_path, "wb") as f:
+        tomli_w.dump(config.to_dict(), f)

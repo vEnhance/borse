@@ -52,13 +52,13 @@ class TestLoadSaveConfig:
 
     def test_load_nonexistent_file(self) -> None:
         """Test loading from nonexistent file returns defaults."""
-        config = load_config(Path("/nonexistent/config.json"))
+        config = load_config(Path("/nonexistent/config.toml"))
         assert config.words_per_game == 10
 
     def test_save_and_load(self) -> None:
         """Test saving and loading config."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / "config.json"
+            config_path = Path(tmpdir) / "config.toml"
 
             original = Config(progress_file="/test/path.json", words_per_game=25)
             save_config(original, config_path)
@@ -67,11 +67,11 @@ class TestLoadSaveConfig:
             assert loaded.progress_file == "/test/path.json"
             assert loaded.words_per_game == 25
 
-    def test_load_invalid_json(self) -> None:
-        """Test loading invalid JSON returns defaults."""
+    def test_load_invalid_toml(self) -> None:
+        """Test loading invalid TOML returns defaults."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / "config.json"
-            config_path.write_text("not valid json")
+            config_path = Path(tmpdir) / "config.toml"
+            config_path.write_text("not valid toml [[[")
 
             config = load_config(config_path)
             assert config.words_per_game == 10

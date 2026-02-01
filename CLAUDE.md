@@ -19,7 +19,7 @@ src/borse/
 ├── braille.py    # Braille 3x2 ASCII art (filled/unfilled circles)
 ├── semaphore.py  # Flag semaphore 5x5 ASCII art
 ├── words.py      # Common English word list
-├── config.py     # User configuration (~/.config/borse/config.json)
+├── config.py     # User configuration (~/.config/borse/config.toml)
 └── progress.py   # Daily progress tracking
 ```
 
@@ -34,7 +34,7 @@ uv run ty check src        # Type check
 
 ## Configuration
 
-User config stored in `~/.config/borse/config.json`:
+User config stored in `~/.config/borse/config.toml`:
 
 - `progress_file`: Path to progress JSON file
 - `words_per_game`: Number of words per session (default: 10)
