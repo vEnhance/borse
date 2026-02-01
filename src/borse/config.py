@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -14,11 +15,14 @@ import tomli_w
 
 
 def get_default_config_dir() -> Path:
-    """Get the default configuration directory.
+    """Get the default configuration directory following XDG spec.
 
     Returns:
-        Path to the configuration directory (~/.config/borse/).
+        Path to the configuration directory ($XDG_CONFIG_HOME/borse/ or ~/.config/borse/).
     """
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config_home:
+        return Path(xdg_config_home) / "borse"
     return Path.home() / ".config" / "borse"
 
 
@@ -88,8 +92,10 @@ class Config:
 def load_config(config_path: Path | None = None) -> Config:
     """Load configuration from file.
 
+    If the config file doesn't exist, creates it with default values.
+
     Args:
-        config_path: Path to config file. Defaults to ~/.config/borse/config.toml.
+        config_path: Path to config file. Defaults to $XDG_CONFIG_HOME/borse/config.toml.
 
     Returns:
         Config instance with loaded or default values.
@@ -98,7 +104,9 @@ def load_config(config_path: Path | None = None) -> Config:
         config_path = get_default_config_path()
 
     if not config_path.exists():
-        return Config()
+        config = Config()
+        save_config(config, config_path)
+        return config
 
     try:
         with open(config_path, "rb") as f:
