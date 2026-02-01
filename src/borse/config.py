@@ -1,0 +1,111 @@
+"""Configuration management for Borse."""
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+
+def get_default_config_dir() -> Path:
+    """Get the default configuration directory.
+
+    Returns:
+        Path to the configuration directory (~/.config/borse/).
+    """
+    return Path.home() / ".config" / "borse"
+
+
+def get_default_config_path() -> Path:
+    """Get the default configuration file path.
+
+    Returns:
+        Path to the configuration file (~/.config/borse/config.json).
+    """
+    return get_default_config_dir() / "config.json"
+
+
+def get_default_progress_path() -> Path:
+    """Get the default progress file path.
+
+    Returns:
+        Path to the progress file (~/.config/borse/progress.json).
+    """
+    return get_default_config_dir() / "progress.json"
+
+
+@dataclass
+class Config:
+    """Configuration settings for Borse.
+
+    Attributes:
+        progress_file: Path to the progress tracking file.
+        words_per_game: Number of words to show in each game session.
+    """
+
+    progress_file: str = field(default_factory=lambda: str(get_default_progress_path()))
+    words_per_game: int = 10
+
+    def to_dict(self) -> dict[str, str | int]:
+        """Convert config to dictionary.
+
+        Returns:
+            Dictionary representation of the config.
+        """
+        return {
+            "progress_file": self.progress_file,
+            "words_per_game": self.words_per_game,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str | int]) -> "Config":
+        """Create config from dictionary.
+
+        Args:
+            data: Dictionary with config values.
+
+        Returns:
+            Config instance.
+        """
+        return cls(
+            progress_file=str(data.get("progress_file", str(get_default_progress_path()))),
+            words_per_game=int(data.get("words_per_game", 10)),
+        )
+
+
+def load_config(config_path: Path | None = None) -> Config:
+    """Load configuration from file.
+
+    Args:
+        config_path: Path to config file. Defaults to ~/.config/borse/config.json.
+
+    Returns:
+        Config instance with loaded or default values.
+    """
+    if config_path is None:
+        config_path = get_default_config_path()
+
+    if not config_path.exists():
+        return Config()
+
+    try:
+        with open(config_path) as f:
+            data = json.load(f)
+        return Config.from_dict(data)
+    except (json.JSONDecodeError, OSError):
+        return Config()
+
+
+def save_config(config: Config, config_path: Path | None = None) -> None:
+    """Save configuration to file.
+
+    Args:
+        config: Config instance to save.
+        config_path: Path to config file. Defaults to ~/.config/borse/config.json.
+    """
+    if config_path is None:
+        config_path = get_default_config_path()
+
+    # Ensure directory exists
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(config_path, "w") as f:
+        json.dump(config.to_dict(), f, indent=2)
