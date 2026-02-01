@@ -8,11 +8,11 @@ class TestEncodeChar:
 
     def test_encode_a(self) -> None:
         """Test encoding 'A' to Morse."""
-        assert encode_char("A") == f"{DOT}{DASH}"
+        assert encode_char("A") == f"{DOT} {DASH}"
 
     def test_encode_lowercase(self) -> None:
         """Test encoding lowercase letters."""
-        assert encode_char("a") == f"{DOT}{DASH}"
+        assert encode_char("a") == f"{DOT} {DASH}"
 
     def test_encode_e(self) -> None:
         """Test encoding 'E' (single dot)."""
@@ -24,11 +24,11 @@ class TestEncodeChar:
 
     def test_encode_s(self) -> None:
         """Test encoding 'S' (three dots)."""
-        assert encode_char("S") == f"{DOT}{DOT}{DOT}"
+        assert encode_char("S") == f"{DOT} {DOT} {DOT}"
 
     def test_encode_o(self) -> None:
         """Test encoding 'O' (three dashes)."""
-        assert encode_char("O") == f"{DASH}{DASH}{DASH}"
+        assert encode_char("O") == f"{DASH} {DASH} {DASH}"
 
     def test_encode_invalid(self) -> None:
         """Test encoding invalid characters."""
@@ -37,8 +37,8 @@ class TestEncodeChar:
 
     def test_encode_number(self) -> None:
         """Test encoding numbers."""
-        assert encode_char("1") == f"{DOT}{DASH}{DASH}{DASH}{DASH}"
-        assert encode_char("0") == f"{DASH}{DASH}{DASH}{DASH}{DASH}"
+        assert encode_char("1") == f"{DOT} {DASH} {DASH} {DASH} {DASH}"
+        assert encode_char("0") == f"{DASH} {DASH} {DASH} {DASH} {DASH}"
 
 
 class TestEncodeWord:
@@ -46,12 +46,16 @@ class TestEncodeWord:
 
     def test_encode_sos(self) -> None:
         """Test encoding 'SOS'."""
-        expected = f"{DOT}{DOT}{DOT}     {DASH}{DASH}{DASH}     {DOT}{DOT}{DOT}"
+        s = f"{DOT} {DOT} {DOT}"
+        o = f"{DASH} {DASH} {DASH}"
+        expected = f"{s}     {o}     {s}"
         assert encode_word("SOS") == expected
 
     def test_encode_with_spaces(self) -> None:
         """Test that spaces in input are ignored."""
-        assert encode_word("A B") == f"{DOT}{DASH}     {DASH}{DOT}{DOT}{DOT}"
+        a = f"{DOT} {DASH}"
+        b = f"{DASH} {DOT} {DOT} {DOT}"
+        assert encode_word("A B") == f"{a}     {b}"
 
     def test_encode_empty(self) -> None:
         """Test encoding empty string."""

@@ -58,7 +58,9 @@ def encode_char(char: str) -> str:
     if upper not in MORSE_CODE:
         return ""
     morse = MORSE_CODE[upper]
-    return morse.replace(".", DOT).replace("-", DASH)
+    # Add space between each dot/dash within the letter
+    symbols = [DOT if c == "." else DASH for c in morse]
+    return " ".join(symbols)
 
 
 def encode_word(word: str) -> str:
