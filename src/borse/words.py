@@ -1,6 +1,9 @@
 """Word list for the game."""
 
 import random
+import string
+
+LETTERS = string.ascii_lowercase
 
 # Common English words - mix of lengths for variety
 COMMON_WORDS: list[str] = [
@@ -468,6 +471,29 @@ def get_random_word() -> str:
         A random common English word.
     """
     return random.choice(COMMON_WORDS)
+
+
+def get_random_letter() -> str:
+    """Get a random single letter from A-Z.
+
+    Returns:
+        A random lowercase letter.
+    """
+    return random.choice(LETTERS)
+
+
+def get_random_word_or_letter(single_letter_probability: float = 0.3) -> str:
+    """Get either a random word or a single letter based on probability.
+
+    Args:
+        single_letter_probability: Probability (0-1) of returning a single letter.
+
+    Returns:
+        A random word or single letter.
+    """
+    if random.random() < single_letter_probability:
+        return get_random_letter()
+    return get_random_word()
 
 
 def get_random_words(count: int) -> list[str]:

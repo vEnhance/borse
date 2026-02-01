@@ -39,12 +39,14 @@ class Config:
     Attributes:
         progress_file: Path to the progress tracking file.
         words_per_game: Number of words to show in each game session.
+        single_letter_probability: Probability (0-1) of showing a single letter instead of a word.
     """
 
     progress_file: str = field(default_factory=lambda: str(get_default_progress_path()))
     words_per_game: int = 10
+    single_letter_probability: float = 0.3
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict[str, str | int | float]:
         """Convert config to dictionary.
 
         Returns:
@@ -53,10 +55,11 @@ class Config:
         return {
             "progress_file": self.progress_file,
             "words_per_game": self.words_per_game,
+            "single_letter_probability": self.single_letter_probability,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | int]) -> "Config":
+    def from_dict(cls, data: dict[str, str | int | float]) -> "Config":
         """Create config from dictionary.
 
         Args:
@@ -68,6 +71,7 @@ class Config:
         return cls(
             progress_file=str(data.get("progress_file", str(get_default_progress_path()))),
             words_per_game=int(data.get("words_per_game", 10)),
+            single_letter_probability=float(data.get("single_letter_probability", 0.3)),
         )
 
 
