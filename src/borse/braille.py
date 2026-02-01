@@ -51,7 +51,7 @@ def encode_char(char: str) -> list[str]:
     """
     upper = char.upper()
     if upper not in BRAILLE_PATTERNS:
-        return ["  ", "  ", "  "]
+        return ["   ", "   ", "   "]
 
     dots = set(BRAILLE_PATTERNS[upper])
 
@@ -63,7 +63,8 @@ def encode_char(char: str) -> list[str]:
     for _row_idx, (left_dot, right_dot) in enumerate([(1, 4), (2, 5), (3, 6)], start=1):
         left = FILLED if left_dot in dots else UNFILLED
         right = FILLED if right_dot in dots else UNFILLED
-        rows.append(f"{left}{right}")
+        # Add space between left and right columns
+        rows.append(f"{left} {right}")
 
     return rows
 
@@ -87,16 +88,19 @@ def get_display_lines(word: str) -> list[str]:
         word: The word to encode.
 
     Returns:
-        A list of 3 strings, one for each row, with characters separated by spaces.
+        A list of 5 strings (3 rows with blank lines between for vertical spacing).
     """
     chars = encode_word(word)
     if not chars:
-        return ["", "", ""]
+        return ["", "", "", "", ""]
 
     # Combine all characters horizontally with space between
+    # Add blank lines between rows for vertical spacing
     lines = []
     for row in range(3):
-        line = "  ".join(char[row] for char in chars)
+        line = "   ".join(char[row] for char in chars)
         lines.append(line)
+        if row < 2:  # Add blank line after first two rows
+            lines.append("")
 
     return lines
