@@ -92,8 +92,6 @@ class Config:
 def load_config(config_path: Path | None = None) -> Config:
     """Load configuration from file.
 
-    If the config file doesn't exist, creates it with default values.
-
     Args:
         config_path: Path to config file. Defaults to $XDG_CONFIG_HOME/borse/config.toml.
 
@@ -105,7 +103,6 @@ def load_config(config_path: Path | None = None) -> Config:
 
     if not config_path.exists():
         config = Config()
-        save_config(config, config_path)
         return config
 
     try:
