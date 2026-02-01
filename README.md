@@ -26,7 +26,7 @@ uv run borse
 
 - **Morse Code**: Decode words displayed as dots and dashes
 - **Braille**: Decode words displayed as 3x2 ASCII art patterns
-- **Flag Semaphore**: Decode words displayed as 3x3 ASCII art flag positions
+- **Semaphore**: Decode words displayed as 3x3 ASCII art flag positions
 
 ## Configuration
 

@@ -31,7 +31,7 @@ MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
 MODE_NAMES: dict[GameMode, str] = {
     GameMode.BRAILLE: "Braille",
     GameMode.MORSE: "Morse Code",
-    GameMode.SEMAPHORE: "Flag Semaphore",
+    GameMode.SEMAPHORE: "Semaphore",
     GameMode.A1Z26: "A1Z26",
 }
 
@@ -108,7 +108,7 @@ class Game:
         menu_items = [
             "[B] Braille",
             "[M] Morse Code",
-            "[S] Flag Semaphore",
+            "[S] Semaphore",
             "[A] A1Z26",
             "[Q] Quit",
         ]
