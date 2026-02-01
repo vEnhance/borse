@@ -41,25 +41,26 @@ SEMAPHORE_POSITIONS: dict[str, tuple[int, int]] = {
     "Z": (6, 7),
 }
 
-# Grid is 5x5:
-#   0  1  2  3  4
-#   5  6  7  8  9
-#  10 11 12 13 14
-#  15 16 17 18 19
-#  20 21 22 23 24
-# Position 12 is center (the person)
+# Grid is 7x5 (wider for horizontal arms):
+#   0  1  2  3  4  5  6
+#   7  8  9 10 11 12 13
+#  14 15 16 17 18 19 20
+#  21 22 23 24 25 26 27
+#  28 29 30 31 32 33 34
+# Position 17 is center (the person)
 
-# Grid positions for each flag position - now with TWO cells for longer sticks
-# Each position maps to (inner_cell, outer_cell)
-POSITION_TO_GRID: dict[int, tuple[int, int]] = {
-    0: (17, 22),  # down
-    1: (16, 20),  # down-left
-    2: (11, 10),  # out-left
-    3: (6, 0),  # up-left
-    4: (7, 2),  # up
-    5: (8, 4),  # up-right
-    6: (13, 14),  # out-right
-    7: (18, 24),  # down-right
+# Grid positions for each flag position
+# Most positions have 2 cells (inner, outer)
+# Horizontal positions (2, 6) have 3 cells for longer arms
+POSITION_TO_GRID: dict[int, tuple[int, ...]] = {
+    0: (24, 31),  # down
+    1: (23, 29),  # down-left
+    2: (16, 15, 14),  # out-left (3 hyphens)
+    3: (9, 1),  # up-left
+    4: (10, 3),  # up
+    5: (11, 5),  # up-right
+    6: (18, 19, 20),  # out-right (3 hyphens)
+    7: (25, 33),  # down-right
 }
 
 # Characters to show for each flag position
@@ -87,33 +88,33 @@ def encode_char(char: str) -> list[str]:
     """
     upper = char.upper()
     if upper not in SEMAPHORE_POSITIONS:
-        return ["     ", "     ", "     ", "     ", "     "]
+        return ["       ", "       ", "       ", "       ", "       "]
 
     left_pos, right_pos = SEMAPHORE_POSITIONS[upper]
 
-    # Build the 5x5 grid
-    grid = [" "] * 25
-    grid[12] = "O"  # Person in center
+    # Build the 7x5 grid
+    grid = [" "] * 35
+    grid[17] = "O"  # Person in center
 
-    # Place the flags (each flag has 2 cells for length)
-    left_inner, left_outer = POSITION_TO_GRID[left_pos]
-    right_inner, right_outer = POSITION_TO_GRID[right_pos]
+    # Place the flags (variable length based on position)
+    left_cells = POSITION_TO_GRID[left_pos]
+    right_cells = POSITION_TO_GRID[right_pos]
 
     left_char = POSITION_CHARS[left_pos]
     right_char = POSITION_CHARS[right_pos]
 
-    grid[left_inner] = left_char
-    grid[left_outer] = left_char
-    grid[right_inner] = right_char
-    grid[right_outer] = right_char
+    for cell in left_cells:
+        grid[cell] = left_char
+    for cell in right_cells:
+        grid[cell] = right_char
 
-    # Convert to 5 rows
+    # Convert to 5 rows (7 columns each)
     rows = [
-        "".join(grid[0:5]),
-        "".join(grid[5:10]),
-        "".join(grid[10:15]),
-        "".join(grid[15:20]),
-        "".join(grid[20:25]),
+        "".join(grid[0:7]),
+        "".join(grid[7:14]),
+        "".join(grid[14:21]),
+        "".join(grid[21:28]),
+        "".join(grid[28:35]),
     ]
 
     return rows
