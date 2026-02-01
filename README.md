@@ -1,32 +1,21 @@
 # Borse
 
-A terminal game for practicing Morse code, Braille, and flag semaphore reading.
+A terminal game for practicing Morse code, Braille, and semaphore,
+which are common encodings for
+[puzzle hunts](https://web.evanchen.cc/upload/EvanPuzzleCodings.pdf).
+Also supports A1Z26 practice.
 
 ## Installation
 
 ```bash
-uv sync
+uv tool install borse
 ```
 
-## Usage
-
-Run the game with:
+Then run the game with:
 
 ```bash
 borse
 ```
-
-Or with uv:
-
-```bash
-uv run borse
-```
-
-## Game Modes
-
-- **Morse Code**: Decode words displayed as dots and dashes
-- **Braille**: Decode words displayed as 3x2 ASCII art patterns
-- **Semaphore**: Decode words displayed as 3x3 ASCII art flag positions
 
 ## Configuration
 
@@ -45,16 +34,16 @@ Your daily progress is automatically saved and displayed on the main menu.
 
 ## Development
 
+Set up by cloning the repository and running
+
 ```bash
-# Run tests
-uv run pytest
+uv sync
+uv run prek install
+```
 
-# Run linter
-uv run ruff check src tests
+To manually run the linter and tests
 
-# Run formatter
-uv run ruff format src tests
-
-# Run type checker
-uv run ty check src
+```bash
+uv run prek --all-files # run linter
+uv run prek --all-files --hook-stage pre-push
 ```
