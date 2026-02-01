@@ -13,26 +13,36 @@ class TestConfig:
         """Test default configuration values."""
         config = Config()
         assert config.words_per_game == 10
+        assert config.single_letter_probability == 0.3
         assert "progress.json" in config.progress_file
 
     def test_to_dict(self) -> None:
         """Test converting config to dictionary."""
-        config = Config(progress_file="/custom/path.json", words_per_game=20)
+        config = Config(
+            progress_file="/custom/path.json", words_per_game=20, single_letter_probability=0.5
+        )
         data = config.to_dict()
         assert data["progress_file"] == "/custom/path.json"
         assert data["words_per_game"] == 20
+        assert data["single_letter_probability"] == 0.5
 
     def test_from_dict(self) -> None:
         """Test creating config from dictionary."""
-        data = {"progress_file": "/custom/path.json", "words_per_game": 15}
+        data = {
+            "progress_file": "/custom/path.json",
+            "words_per_game": 15,
+            "single_letter_probability": 0.7,
+        }
         config = Config.from_dict(data)
         assert config.progress_file == "/custom/path.json"
         assert config.words_per_game == 15
+        assert config.single_letter_probability == 0.7
 
     def test_from_dict_with_missing_values(self) -> None:
         """Test creating config with missing values uses defaults."""
         config = Config.from_dict({})
         assert config.words_per_game == 10
+        assert config.single_letter_probability == 0.3
 
 
 class TestLoadSaveConfig:

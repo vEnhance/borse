@@ -8,7 +8,7 @@ from enum import Enum
 from borse import a1z26, braille, morse, semaphore
 from borse.config import load_config
 from borse.progress import load_progress, save_progress
-from borse.words import get_random_word
+from borse.words import get_random_word_or_letter
 
 
 class GameMode(Enum):
@@ -192,7 +192,7 @@ class Game:
         completed_words: list[str] = []  # Track completed words
 
         while words_completed < total_words:
-            word = get_random_word()
+            word = get_random_word_or_letter(self.config.single_letter_probability)
             user_input = ""
 
             while True:
