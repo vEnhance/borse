@@ -120,7 +120,7 @@ class Game:
 
         while True:
             row = self.draw_title("BORSE - Code Practice Game")
-            height, _width = self.stdscr.getmaxyx()
+            height, _ = self.stdscr.getmaxyx()
 
             # Show today's progress
             today = self.progress.get_today()
@@ -222,9 +222,9 @@ class Game:
 
                 # Input prompt - show user input in UPPERCASE
                 input_row = row
+                input_start = 17
                 try:
                     self.stdscr.addstr(row, 2, "Type the word: ")
-                    input_start = 17
                     display_input = user_input.upper()
                     self.stdscr.addstr(row, input_start, display_input)
 
@@ -307,7 +307,6 @@ class Game:
 
         while True:
             row = self.draw_title("Settings")
-            height, _width = self.stdscr.getmaxyx()
 
             # Instructions
             with contextlib.suppress(curses.error):
