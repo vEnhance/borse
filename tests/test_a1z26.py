@@ -34,15 +34,15 @@ class TestEncodeWord:
 
     def test_encode_cat(self) -> None:
         """Test encoding 'CAT'."""
-        assert encode_word("CAT") == "3-1-20"
+        assert encode_word("CAT") == "3 1 20"
 
     def test_encode_hello(self) -> None:
         """Test encoding 'HELLO'."""
-        assert encode_word("HELLO") == "8-5-12-12-15"
+        assert encode_word("HELLO") == "8 5 12 12 15"
 
     def test_encode_with_spaces(self) -> None:
         """Test that spaces in input are ignored."""
-        assert encode_word("A B") == "1-2"
+        assert encode_word("A B") == "1 2"
 
     def test_encode_empty(self) -> None:
         """Test encoding empty string."""

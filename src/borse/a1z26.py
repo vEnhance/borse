@@ -26,7 +26,7 @@ def encode_word(word: str) -> str:
         The A1Z26 representation with dashes between numbers.
     """
     numbers = [encode_char(c) for c in word if c.isalpha()]
-    return "-".join(numbers)
+    return " ".join(numbers)
 
 
 def get_display_lines(word: str) -> list[str]:
