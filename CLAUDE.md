@@ -2,11 +2,11 @@
 
 A terminal curses game for practicing Morse code, Braille, and flag semaphore reading.
 
-## Quick Start
+## Setup
 
 ```bash
 uv sync           # Install dependencies
-uv run borse      # Run the game
+prek install      # Install pre-commit hooks
 ```
 
 ## Project Structure
@@ -15,9 +15,10 @@ uv run borse      # Run the game
 src/borse/
 ├── main.py       # Entry point, curses wrapper
 ├── game.py       # Curses UI, menu, and game loop
-├── morse.py      # Morse code encoding (dots and dashes)
 ├── braille.py    # Braille 3x2 ASCII art (filled/unfilled circles)
+├── morse.py      # Morse code encoding (dots and dashes)
 ├── semaphore.py  # Flag semaphore 5x5 ASCII art
+├── a1z26.py      # A1Z26 practice
 ├── words.py      # Common English word list
 ├── config.py     # User configuration (~/.config/borse/config.toml)
 └── progress.py   # Daily progress tracking

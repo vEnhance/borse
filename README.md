@@ -102,10 +102,10 @@ Set up by cloning the repository and running
 
 ```bash
 uv sync
-uv run prek install
+uv run prek install # pre-commit hooks
 ```
 
-To manually run the linter and tests
+To manually run the linter and tests:
 
 ```bash
 uv run prek --all-files # run linter
