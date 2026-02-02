@@ -122,17 +122,25 @@ class Game:
             row = self.draw_title("BORSE - Braille mORse SEmaphore, by vEnhance")
             height, _ = self.stdscr.getmaxyx()
 
-            # Show today's progress
+            # Show today's progress and all-time total
             today = self.progress.get_today()
+            alltime = self.progress.get_alltime_by_mode()
             progress_text = (
                 f"Today: {today.total_words} words "
                 f"(B:{today.braille_words} M:{today.morse_words} "
                 f"S:{today.semaphore_words} A:{today.a1z26_words})"
             )
+            alltime_text = (
+                f"All-time: {alltime.total_words} words "
+                f"(B:{alltime.braille_words} M:{alltime.morse_words} "
+                f"S:{alltime.semaphore_words} A:{alltime.a1z26_words})"
+            )
             try:
                 if curses.has_colors():
                     self.stdscr.attron(curses.color_pair(3))
                 self.stdscr.addstr(row, 2, progress_text)
+                row += 1
+                self.stdscr.addstr(row, 2, alltime_text)
                 if curses.has_colors():
                     self.stdscr.attroff(curses.color_pair(3))
             except curses.error:

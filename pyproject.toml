@@ -42,3 +42,7 @@ dev = [
     "ruff>=0.4.0",
     "ty>=0.0.1a6",
 ]
+
+[tool.codespell]
+count = ""
+ignore-words-list = "alltime"
