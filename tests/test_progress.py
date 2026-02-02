@@ -155,7 +155,9 @@ class TestProgress:
         progress = Progress(
             daily={
                 "2024-01-01": DailyProgress(morse_words=5, braille_words=3),
-                "2024-01-02": DailyProgress(morse_words=2, semaphore_words=2, a1z26_words=4),
+                "2024-01-02": DailyProgress(
+                    morse_words=2, semaphore_words=2, a1z26_words=4
+                ),
                 "2024-01-03": DailyProgress(morse_words=1, braille_words=1),
             }
         )
