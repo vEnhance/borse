@@ -1,6 +1,6 @@
 [project]
 name = "borse"
-description = "A terminal game for practicing Morse code, Braille, and semaphore."
+description = "Practice braille, Morse, semaphore."
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 dependencies = [
