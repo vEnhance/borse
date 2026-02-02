@@ -16,13 +16,12 @@ Or you can install from PyPI by using `uv`, `pip`, etc.
 
 ## Configuration
 
-Configuration is stored in `~/.config/borse/config.json` by default:
+Configuration is stored in `~/.config/borse/config.toml` by default, e.g.
 
-```json
-{
-  "progress_file": "~/.config/borse/progress.json",
-  "words_per_game": 10
-}
+```toml
+progress_file = "/home/evan/.config/borse/progress.json"
+words_per_game = 10
+single_letter_probability = 0.3
 ```
 
 Your daily progress is also automatically saved and displayed on the main menu.
