@@ -64,10 +64,3 @@ venv.bak/
 .vscode/
 *.swp
 *.swo
-
-# uv
-.uv/
-uv.lock
-
-# Project specific
-*.log
