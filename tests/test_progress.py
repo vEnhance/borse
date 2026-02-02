@@ -140,6 +140,32 @@ class TestProgress:
         )
         assert progress.get_alltime_total() == 15
 
+    def test_get_alltime_by_mode_empty(self) -> None:
+        """Test all-time by mode with no progress."""
+        progress = Progress()
+        alltime = progress.get_alltime_by_mode()
+        assert alltime.morse_words == 0
+        assert alltime.braille_words == 0
+        assert alltime.semaphore_words == 0
+        assert alltime.a1z26_words == 0
+        assert alltime.total_words == 0
+
+    def test_get_alltime_by_mode_multiple_days(self) -> None:
+        """Test all-time by mode across multiple days."""
+        progress = Progress(
+            daily={
+                "2024-01-01": DailyProgress(morse_words=5, braille_words=3),
+                "2024-01-02": DailyProgress(morse_words=2, semaphore_words=2, a1z26_words=4),
+                "2024-01-03": DailyProgress(morse_words=1, braille_words=1),
+            }
+        )
+        alltime = progress.get_alltime_by_mode()
+        assert alltime.morse_words == 8
+        assert alltime.braille_words == 4
+        assert alltime.semaphore_words == 2
+        assert alltime.a1z26_words == 4
+        assert alltime.total_words == 18
+
 
 class TestLoadSaveProgress:
     """Tests for load_progress and save_progress functions."""

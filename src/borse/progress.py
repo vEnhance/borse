@@ -98,6 +98,19 @@ class Progress:
         """
         return sum(day.total_words for day in self.daily.values())
 
+    def get_alltime_by_mode(self) -> DailyProgress:
+        """Get all-time totals broken down by mode.
+
+        Returns:
+            DailyProgress with summed values across all days.
+        """
+        return DailyProgress(
+            morse_words=sum(day.morse_words for day in self.daily.values()),
+            braille_words=sum(day.braille_words for day in self.daily.values()),
+            semaphore_words=sum(day.semaphore_words for day in self.daily.values()),
+            a1z26_words=sum(day.a1z26_words for day in self.daily.values()),
+        )
+
     def add_word(self, mode: str) -> None:
         """Add a completed word for today.
 

@@ -124,13 +124,17 @@ class Game:
 
             # Show today's progress and all-time total
             today = self.progress.get_today()
-            alltime_total = self.progress.get_alltime_total()
+            alltime = self.progress.get_alltime_by_mode()
             progress_text = (
                 f"Today: {today.total_words} words "
                 f"(B:{today.braille_words} M:{today.morse_words} "
                 f"S:{today.semaphore_words} A:{today.a1z26_words})"
             )
-            alltime_text = f"All-time: {alltime_total} words"
+            alltime_text = (
+                f"All-time: {alltime.total_words} words "
+                f"(B:{alltime.braille_words} M:{alltime.morse_words} "
+                f"S:{alltime.semaphore_words} A:{alltime.a1z26_words})"
+            )
             try:
                 if curses.has_colors():
                     self.stdscr.attron(curses.color_pair(3))
