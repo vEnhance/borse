@@ -119,7 +119,7 @@ class Game:
         ]
 
         while True:
-            row = self.draw_title("BORSE - Code Practice Game")
+            row = self.draw_title("BORSE - Braille mORse SEmaphore, by vEnhance")
             height, _ = self.stdscr.getmaxyx()
 
             # Show today's progress
