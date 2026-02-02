@@ -90,6 +90,14 @@ class Progress:
             self.daily[today] = DailyProgress()
         return self.daily[today]
 
+    def get_alltime_total(self) -> int:
+        """Get total words answered across all days.
+
+        Returns:
+            Sum of all words across all days.
+        """
+        return sum(day.total_words for day in self.daily.values())
+
     def add_word(self, mode: str) -> None:
         """Add a completed word for today.
 
