@@ -128,15 +128,26 @@ class Game:
             # Show today's progress and all-time total
             today = self.progress.get_today()
             alltime = self.progress.get_alltime_by_mode()
-            progress_text = (
-                f"Today: {today.total_words} words "
-                f"(B:{today.braille_words} M:{today.morse_words} "
-                f"S:{today.semaphore_words} A:{today.a1z26_words})"
+            SEP = " " * 4
+            progress_text = SEP.join(
+                (
+                    f"Today:    {today.total_words:6d} words",
+                    "|",
+                    f"B:{today.braille_words:4d}",
+                    f"M:{today.morse_words:4d}",
+                    f"S:{today.semaphore_words:4d}",
+                    f"A:{today.a1z26_words:4d}",
+                )
             )
-            alltime_text = (
-                f"All-time: {alltime.total_words} words "
-                f"(B:{alltime.braille_words} M:{alltime.morse_words} "
-                f"S:{alltime.semaphore_words} A:{alltime.a1z26_words})"
+            alltime_text = SEP.join(
+                (
+                    f"All-time: {alltime.total_words:6d} words",
+                    "|",
+                    f"B:{alltime.braille_words:4d}",
+                    f"M:{alltime.morse_words:4d}",
+                    f"S:{alltime.semaphore_words:4d}",
+                    f"A:{alltime.a1z26_words:4d}",
+                )
             )
             try:
                 if curses.has_colors():
