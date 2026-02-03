@@ -6,6 +6,7 @@ from collections.abc import Callable
 from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
+from borse.__about__ import __version__
 from borse.config import load_config, save_config
 from borse.progress import load_progress, save_progress
 from borse.words import get_random_word_or_letter
@@ -120,6 +121,8 @@ class Game:
 
         while True:
             row = self.draw_title("BORSE - Braille mORse SEmaphore, by vEnhance")
+            self.stdscr.addstr(row, 2, f"Version {__version__}")
+            row += 2
             height, _ = self.stdscr.getmaxyx()
 
             # Show today's progress and all-time total
