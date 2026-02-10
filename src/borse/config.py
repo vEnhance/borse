@@ -35,13 +35,25 @@ def get_default_config_path() -> Path:
     return get_default_config_dir() / "config.toml"
 
 
+def get_default_data_dir() -> Path:
+    """Get the default data directory following XDG spec.
+
+    Returns:
+        Path to the data directory ($XDG_DATA_HOME/borse/ or ~/.local/share/borse/).
+    """
+    xdg_data_home = os.environ.get("XDG_DATA_HOME")
+    if xdg_data_home:
+        return Path(xdg_data_home) / "borse"
+    return Path.home() / ".local" / "share" / "borse"
+
+
 def get_default_progress_path() -> Path:
     """Get the default progress file path.
 
     Returns:
-        Path to the progress file (~/.config/borse/progress.json).
+        Path to the progress file ($XDG_DATA_HOME/borse/progress.json).
     """
-    return get_default_config_dir() / "progress.json"
+    return get_default_data_dir() / "progress.json"
 
 
 @dataclass
