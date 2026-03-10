@@ -4,6 +4,8 @@ description = "Practice braille, Morse, semaphore."
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 dependencies = [
+    "numpy>=2.2.6",
+    "sounddevice>=0.5.5",
     "tomli>=2.0.0; python_version < '3.11'",
     "tomli-w>=1.0.0",
 ]

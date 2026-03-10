@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-from borse.config import Config, load_config, save_config
+from borse.config import MORSE_DISPLAY_MODES, Config, load_config, save_config
 
 
 class TestConfig:
@@ -45,6 +45,28 @@ class TestConfig:
         config = Config.from_dict({})
         assert config.words_per_game == 10
         assert config.single_letter_probability == 0.3
+
+    def test_morse_display_mode_default(self) -> None:
+        """Test default morse_display_mode is 'both'."""
+        config = Config()
+        assert config.morse_display_mode == "both"
+
+    def test_morse_display_mode_valid_values(self) -> None:
+        """Test that all valid morse display modes are accepted."""
+        for mode in MORSE_DISPLAY_MODES:
+            config = Config.from_dict({"morse_display_mode": mode})
+            assert config.morse_display_mode == mode
+
+    def test_morse_display_mode_invalid_falls_back_to_both(self) -> None:
+        """Test that invalid morse_display_mode falls back to 'both'."""
+        config = Config.from_dict({"morse_display_mode": "invalid"})
+        assert config.morse_display_mode == "both"
+
+    def test_morse_display_mode_in_to_dict(self) -> None:
+        """Test that morse_display_mode is included in to_dict output."""
+        config = Config(morse_display_mode="audio")
+        data = config.to_dict()
+        assert data["morse_display_mode"] == "audio"
 
 
 class TestLoadSaveConfig:
