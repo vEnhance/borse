@@ -39,7 +39,7 @@ class TestGenerateMorseAudio:
 
     def test_dash_longer_than_dot(self) -> None:
         """Test that a dash (T) produces more samples than a dot (E)."""
-        dot_audio = generate_morse_audio("E")   # single dot
+        dot_audio = generate_morse_audio("E")  # single dot
         dash_audio = generate_morse_audio("T")  # single dash
         assert len(dash_audio) > len(dot_audio)
 
