@@ -1,47 +1,46 @@
 """Tests for Morse code audio generation."""
 
-import numpy as np
-
 from borse.morse_audio import (
     MorsePlayer,
-    generate_morse_audio,
+    generate_morse_wav,
 )
 
 
-class TestGenerateMorseAudio:
-    """Tests for generate_morse_audio function."""
+class TestGenerateMorseWav:
+    """Tests for generate_morse_wav function."""
 
-    def test_returns_float32_array(self) -> None:
-        """Test that output is a float32 numpy array."""
-        audio = generate_morse_audio("A")
-        assert audio.dtype == np.float32
+    def test_returns_bytes(self) -> None:
+        """Test that output is bytes."""
+        wav = generate_morse_wav("A")
+        assert isinstance(wav, bytes)
 
     def test_empty_word_returns_empty(self) -> None:
-        """Test that an unrecognized word returns empty array."""
-        audio = generate_morse_audio("!!!")
-        assert len(audio) == 0
+        """Test that an unrecognised word returns empty bytes."""
+        wav = generate_morse_wav("!!!")
+        assert wav == b""
+
+    def test_starts_with_wav_header(self) -> None:
+        """Test that the output is a valid WAV file (starts with RIFF)."""
+        wav = generate_morse_wav("SOS")
+        assert wav[:4] == b"RIFF"
+        assert wav[8:12] == b"WAVE"
 
     def test_nonempty_for_valid_word(self) -> None:
-        """Test that a valid word produces audio samples."""
-        audio = generate_morse_audio("SOS")
-        assert len(audio) > 0
+        """Test that a valid word produces non-empty WAV bytes."""
+        wav = generate_morse_wav("SOS")
+        assert len(wav) > 0
 
-    def test_longer_word_produces_more_samples(self) -> None:
-        """Test that longer Morse sequences produce more audio."""
-        short = generate_morse_audio("E")  # single dot
-        long = generate_morse_audio("SOS")  # much longer
+    def test_longer_word_produces_more_bytes(self) -> None:
+        """Test that longer Morse sequences produce more audio bytes."""
+        short = generate_morse_wav("E")  # single dot
+        long = generate_morse_wav("SOS")  # much longer
         assert len(long) > len(short)
 
-    def test_amplitude_within_range(self) -> None:
-        """Test that audio amplitude stays within [-1, 1]."""
-        audio = generate_morse_audio("SOS")
-        assert float(np.max(np.abs(audio))) <= 1.0
-
     def test_dash_longer_than_dot(self) -> None:
-        """Test that a dash (T) produces more samples than a dot (E)."""
-        dot_audio = generate_morse_audio("E")  # single dot
-        dash_audio = generate_morse_audio("T")  # single dash
-        assert len(dash_audio) > len(dot_audio)
+        """Test that a dash (T) produces more audio bytes than a dot (E)."""
+        dot_wav = generate_morse_wav("E")  # single dot
+        dash_wav = generate_morse_wav("T")  # single dash
+        assert len(dash_wav) > len(dot_wav)
 
 
 class TestMorsePlayer:
