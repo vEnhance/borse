@@ -211,7 +211,7 @@ class Game:
                     char = chr(key)
                     if char in MODE_SHORTCUTS:
                         return MODE_SHORTCUTS[char]
-                except (ValueError, OverflowError):
+                except ValueError, OverflowError:
                     pass
 
     def play_game(self, mode: GameMode) -> None:
