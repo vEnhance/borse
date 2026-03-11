@@ -16,7 +16,6 @@ from borse.morse import MORSE_CODE
 
 SAMPLE_RATE = 44100
 FREQUENCY = 600
-AMPLITUDE = 0.3
 DOT_DURATION = 0.08
 DASH_DURATION = 0.24  # 3x dot
 SYMBOL_GAP = 0.08
@@ -40,7 +39,7 @@ def _make_samples(duration: float, freq: float) -> array.array:
         if freq == 0.0:
             s = 0.0
         else:
-            s = AMPLITUDE * math.sin(2 * math.pi * freq * i / SAMPLE_RATE)
+            s = math.sin(2 * math.pi * freq * i / SAMPLE_RATE)
             if i < fade:
                 s *= i / fade
             elif i >= n - fade:
@@ -56,8 +55,12 @@ _SYM_GAP = _make_samples(SYMBOL_GAP, 0.0)
 _LET_GAP = _make_samples(LETTER_GAP, 0.0)
 
 
-def generate_morse_wav(word: str) -> bytes:
+def generate_morse_wav(word: str, volume: float = 1.0) -> bytes:
     """Return WAV bytes encoding the Morse code for *word*.
+
+    Args:
+        word: The word to encode.
+        volume: Amplitude scale factor in [0.0, 1.0].
 
     Returns an empty bytes object if the word has no encodable characters.
     """
@@ -74,6 +77,10 @@ def generate_morse_wav(word: str) -> bytes:
                 samples.extend(_SYM_GAP)
         if i < len(letters) - 1:
             samples.extend(_LET_GAP)
+
+    vol = max(0.0, min(1.0, volume))
+    if vol != 1.0:
+        samples = array.array("h", (int(s * vol) for s in samples))
 
     buf = io.BytesIO()
     with wave.open(buf, "wb") as wf:
@@ -93,10 +100,10 @@ class MorsePlayer:
         self._proc: subprocess.Popen[bytes] | None = None
         self._lock = threading.Lock()
 
-    def play(self, word: str) -> None:
+    def play(self, word: str, volume: float = 1.0) -> None:
         """Generate and play Morse audio for *word* (non-blocking)."""
         self.stop()
-        self._wav = generate_morse_wav(word)
+        self._wav = generate_morse_wav(word, volume)
         if not self._wav:
             return
         self._thread = threading.Thread(target=self._play_wav, daemon=True)

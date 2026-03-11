@@ -68,6 +68,26 @@ class TestConfig:
         data = config.to_dict()
         assert data["morse_display_mode"] == "audio"
 
+    def test_morse_volume_default(self) -> None:
+        """Test default morse_volume is 1.0."""
+        config = Config()
+        assert config.morse_volume == 1.0
+
+    def test_morse_volume_from_dict(self) -> None:
+        """Test that morse_volume is loaded from dict."""
+        config = Config.from_dict({"morse_volume": 0.7})
+        assert config.morse_volume == 0.7
+
+    def test_morse_volume_clamped(self) -> None:
+        """Test that out-of-range morse_volume is clamped to [0, 1]."""
+        assert Config.from_dict({"morse_volume": 2.0}).morse_volume == 1.0
+        assert Config.from_dict({"morse_volume": -0.5}).morse_volume == 0.0
+
+    def test_morse_volume_in_to_dict(self) -> None:
+        """Test that morse_volume is included in to_dict output."""
+        config = Config(morse_volume=0.3)
+        assert config.to_dict()["morse_volume"] == 0.3
+
 
 class TestLoadSaveConfig:
     """Tests for load_config and save_config functions."""

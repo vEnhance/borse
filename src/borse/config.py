@@ -74,6 +74,7 @@ class Config:
     words_per_game: int = 10
     single_letter_probability: float = 0.3
     morse_display_mode: str = "both"
+    morse_volume: float = 1.0
 
     def to_dict(self) -> dict[str, str | int | float]:
         """Convert config to dictionary.
@@ -86,6 +87,7 @@ class Config:
             "words_per_game": self.words_per_game,
             "single_letter_probability": self.single_letter_probability,
             "morse_display_mode": self.morse_display_mode,
+            "morse_volume": self.morse_volume,
         }
 
     @classmethod
@@ -100,6 +102,8 @@ class Config:
         """
         raw_mode = str(data.get("morse_display_mode", "both"))
         morse_display_mode = raw_mode if raw_mode in MORSE_DISPLAY_MODES else "both"
+        raw_vol = float(data.get("morse_volume", 1.0))
+        morse_volume = max(0.0, min(1.0, raw_vol))
         return cls(
             progress_file=str(
                 data.get("progress_file", str(get_default_progress_path()))
@@ -107,6 +111,7 @@ class Config:
             words_per_game=int(data.get("words_per_game", 10)),
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),
             morse_display_mode=morse_display_mode,
+            morse_volume=morse_volume,
         )
 
 

@@ -42,6 +42,34 @@ class TestGenerateMorseWav:
         dash_wav = generate_morse_wav("T")  # single dash
         assert len(dash_wav) > len(dot_wav)
 
+    def test_volume_zero_produces_silence(self) -> None:
+        """Test that volume=0.0 produces a WAV with silent (zero) samples."""
+        import array
+        import io
+        import wave
+
+        wav = generate_morse_wav("SOS", volume=0.0)
+        assert len(wav) > 0
+        with wave.open(io.BytesIO(wav)) as wf:
+            frames = wf.readframes(wf.getnframes())
+        samples = array.array("h", frames)
+        assert all(s == 0 for s in samples)
+
+    def test_lower_volume_produces_smaller_samples(self) -> None:
+        """Test that lower volume produces lower amplitude samples."""
+        import array
+        import io
+        import wave
+
+        def peak(wav_bytes: bytes) -> int:
+            with wave.open(io.BytesIO(wav_bytes)) as wf:
+                frames = wf.readframes(wf.getnframes())
+            return max(abs(s) for s in array.array("h", frames))
+
+        assert peak(generate_morse_wav("A", volume=1.0)) > peak(
+            generate_morse_wav("A", volume=0.5)
+        )
+
 
 class TestMorsePlayer:
     """Tests for MorsePlayer class."""

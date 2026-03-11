@@ -235,7 +235,7 @@ class Game:
 
             # Play audio once when the new word starts
             if play_audio:
-                self.morse_player.play(word)
+                self.morse_player.play(word, self.config.morse_volume)
 
             while True:
                 row = self.draw_title(
@@ -342,7 +342,7 @@ class Game:
         """Show the settings menu for editing configuration."""
         selected = 0
         # Settings that use free-text editing
-        text_settings = ["words_per_game", "single_letter_probability"]
+        text_settings = ["words_per_game", "single_letter_probability", "morse_volume"]
         # Settings that cycle through fixed choices (setting -> list of options)
         cycle_settings = ["morse_display_mode"]
         settings_items = text_settings + cycle_settings
@@ -361,7 +361,7 @@ class Game:
             for i, setting in enumerate(settings_items):
                 try:
                     value = getattr(self.config, setting)
-                    if setting == "single_letter_probability":
+                    if setting in ("single_letter_probability", "morse_volume"):
                         display_value = f"{value:.0%}"
                     elif setting == "morse_display_mode":
                         display_value = str(value)
@@ -421,6 +421,11 @@ class Game:
                                 val = val / 100
                             if 0 <= val <= 1:
                                 self.config.single_letter_probability = val
+                        elif setting == "morse_volume":
+                            val = float(edit_buffer)
+                            if val > 1:
+                                val = val / 100
+                            self.config.morse_volume = max(0.0, min(1.0, val))
                         save_config(self.config)
                     except ValueError:
                         pass  # Invalid input, ignore
@@ -453,7 +458,7 @@ class Game:
                         editing = selected
                         # Pre-fill with current value
                         value = getattr(self.config, setting)
-                        if setting == "single_letter_probability":
+                        if setting in ("single_letter_probability", "morse_volume"):
                             edit_buffer = str(int(value * 100))
                         else:
                             edit_buffer = str(value)
