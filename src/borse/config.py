@@ -56,6 +56,9 @@ def get_default_progress_path() -> Path:
     return get_default_data_dir() / "progress.json"
 
 
+MORSE_DISPLAY_MODES = ("both", "visual", "audio")
+
+
 @dataclass
 class Config:
     """Configuration settings for Borse.
@@ -64,11 +67,15 @@ class Config:
         progress_file: Path to the progress tracking file.
         words_per_game: Number of words to show in each game session.
         single_letter_probability: Probability (0-1) of showing a single letter instead of a word.
+        morse_display_mode: How to present Morse code - "visual", "audio", or "both".
+        morse_volume: Audio volume for Morse playback, clamped to [0.0, 1.0].
     """
 
     progress_file: str = field(default_factory=lambda: str(get_default_progress_path()))
     words_per_game: int = 10
     single_letter_probability: float = 0.3
+    morse_display_mode: str = "both"
+    morse_volume: float = 1.0
 
     def to_dict(self) -> dict[str, str | int | float]:
         """Convert config to dictionary.
@@ -80,6 +87,8 @@ class Config:
             "progress_file": self.progress_file,
             "words_per_game": self.words_per_game,
             "single_letter_probability": self.single_letter_probability,
+            "morse_display_mode": self.morse_display_mode,
+            "morse_volume": self.morse_volume,
         }
 
     @classmethod
@@ -92,12 +101,18 @@ class Config:
         Returns:
             Config instance.
         """
+        raw_mode = str(data.get("morse_display_mode", "both"))
+        morse_display_mode = raw_mode if raw_mode in MORSE_DISPLAY_MODES else "both"
+        raw_vol = float(data.get("morse_volume", 1.0))
+        morse_volume = max(0.0, min(1.0, raw_vol))
         return cls(
             progress_file=str(
                 data.get("progress_file", str(get_default_progress_path()))
             ),
             words_per_game=int(data.get("words_per_game", 10)),
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),
+            morse_display_mode=morse_display_mode,
+            morse_volume=morse_volume,
         )
 
 
@@ -121,7 +136,7 @@ def load_config(config_path: Path | None = None) -> Config:
         with open(config_path, "rb") as f:
             data = tomllib.load(f)
         return Config.from_dict(data)
-    except (tomllib.TOMLDecodeError, OSError):
+    except tomllib.TOMLDecodeError, OSError:
         return Config()
 
 

@@ -7,7 +7,8 @@ from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
 from borse.__about__ import __version__
-from borse.config import load_config, save_config
+from borse.config import MORSE_DISPLAY_MODES, load_config, save_config
+from borse.morse_audio import MorsePlayer
 from borse.progress import load_progress, save_progress
 from borse.words import get_random_word_or_letter
 
@@ -65,6 +66,7 @@ class Game:
         self.stdscr = stdscr
         self.config = load_config()
         self.progress = load_progress(self.config.progress_file)
+        self.morse_player = MorsePlayer()
 
         # Setup curses
         curses.curs_set(1)  # Show cursor
@@ -209,7 +211,7 @@ class Game:
                     char = chr(key)
                     if char in MODE_SHORTCUTS:
                         return MODE_SHORTCUTS[char]
-                except (ValueError, OverflowError):
+                except ValueError, OverflowError:
                     pass
 
     def play_game(self, mode: GameMode) -> None:
@@ -227,6 +229,13 @@ class Game:
         while words_completed < total_words:
             word = get_random_word_or_letter(self.config.single_letter_probability)
             user_input = ""
+            morse_mode = self.config.morse_display_mode
+            play_audio = mode == GameMode.MORSE and morse_mode in ("audio", "both")
+            show_visual = mode != GameMode.MORSE or morse_mode in ("visual", "both")
+
+            # Play audio once when the new word starts
+            if play_audio:
+                self.morse_player.play(word, self.config.morse_volume)
 
             while True:
                 row = self.draw_title(
@@ -234,13 +243,17 @@ class Game:
                 )
                 height, _width = self.stdscr.getmaxyx()
 
-                # Display the encoded word
-                display_lines = display_func(word)
-                for i, line in enumerate(display_lines):
+                # Display the encoded word (or audio-only placeholder)
+                if show_visual:
+                    display_lines = display_func(word)
+                    for i, line in enumerate(display_lines):
+                        with contextlib.suppress(curses.error):
+                            self.stdscr.addstr(row + i, 4, line)
+                    row += len(display_lines) + 2
+                else:
                     with contextlib.suppress(curses.error):
-                        self.stdscr.addstr(row + i, 4, line)
-
-                row += len(display_lines) + 2
+                        self.stdscr.addstr(row, 4, "[audio only - press Tab to replay]")
+                    row += 3
 
                 # Input prompt - show user input in UPPERCASE
                 input_row = row
@@ -265,7 +278,12 @@ class Game:
 
                 # Instructions
                 with contextlib.suppress(curses.error):
-                    self.stdscr.addstr(row, 2, "Press Esc to return to menu")
+                    if play_audio:
+                        self.stdscr.addstr(
+                            row, 2, "Tab: replay audio  |  Esc: return to menu"
+                        )
+                    else:
+                        self.stdscr.addstr(row, 2, "Press Esc to return to menu")
 
                 row += 2
 
@@ -300,7 +318,10 @@ class Game:
                 key = self.stdscr.getch()
 
                 if key == 27:  # Escape
+                    self.morse_player.stop()
                     return
+                elif key == 9 and play_audio:  # Tab - replay audio
+                    self.morse_player.replay()
                 elif key in (curses.KEY_BACKSPACE, 127, 8):
                     user_input = user_input[:-1]
                 elif 32 <= key <= 126:  # Printable characters
@@ -320,10 +341,11 @@ class Game:
     def show_settings(self) -> None:
         """Show the settings menu for editing configuration."""
         selected = 0
-        settings_items = [
-            "words_per_game",
-            "single_letter_probability",
-        ]
+        # Settings that use free-text editing
+        text_settings = ["words_per_game", "single_letter_probability", "morse_volume"]
+        # Settings that cycle through fixed choices (setting -> list of options)
+        cycle_settings = ["morse_display_mode"]
+        settings_items = text_settings + cycle_settings
         editing: int | None = None
         edit_buffer = ""
 
@@ -339,13 +361,15 @@ class Game:
             for i, setting in enumerate(settings_items):
                 try:
                     value = getattr(self.config, setting)
-                    if setting == "single_letter_probability":
+                    if setting in ("single_letter_probability", "morse_volume"):
                         display_value = f"{value:.0%}"
+                    elif setting == "morse_display_mode":
+                        display_value = str(value)
                     else:
                         display_value = str(value)
 
                     if editing == i:
-                        # Show edit mode
+                        # Show edit mode (only for text settings)
                         label = f"  {setting}: "
                         self.stdscr.addstr(row + i, 4, label)
                         self.stdscr.attron(curses.A_UNDERLINE)
@@ -367,6 +391,10 @@ class Game:
             with contextlib.suppress(curses.error):
                 if editing is not None:
                     self.stdscr.addstr(row, 2, "Enter: save, Esc: cancel")
+                elif settings_items[selected] in cycle_settings:
+                    self.stdscr.addstr(
+                        row, 2, "Enter/Space: cycle value, Esc: back to menu"
+                    )
                 else:
                     self.stdscr.addstr(row, 2, "Enter: edit, Esc: back to menu")
 
@@ -375,7 +403,7 @@ class Game:
             key = self.stdscr.getch()
 
             if editing is not None:
-                # Edit mode
+                # Edit mode (text settings only)
                 if key == 27:  # Escape - cancel edit
                     editing = None
                     edit_buffer = ""
@@ -393,6 +421,11 @@ class Game:
                                 val = val / 100
                             if 0 <= val <= 1:
                                 self.config.single_letter_probability = val
+                        elif setting == "morse_volume":
+                            val = float(edit_buffer)
+                            if val > 1:
+                                val = val / 100
+                            self.config.morse_volume = max(0.0, min(1.0, val))
                         save_config(self.config)
                     except ValueError:
                         pass  # Invalid input, ignore
@@ -410,15 +443,25 @@ class Game:
                     selected = (selected - 1) % len(settings_items)
                 elif key == curses.KEY_DOWN:
                     selected = (selected + 1) % len(settings_items)
-                elif key in (curses.KEY_ENTER, 10, 13):
-                    editing = selected
-                    # Pre-fill with current value
+                elif key in (curses.KEY_ENTER, 10, 13, ord(" ")):
                     setting = settings_items[selected]
-                    value = getattr(self.config, setting)
-                    if setting == "single_letter_probability":
-                        edit_buffer = str(int(value * 100))
+                    if setting in cycle_settings:
+                        # Cycle through the fixed options
+                        if setting == "morse_display_mode":
+                            current = self.config.morse_display_mode
+                            idx = list(MORSE_DISPLAY_MODES).index(current)
+                            self.config.morse_display_mode = MORSE_DISPLAY_MODES[
+                                (idx + 1) % len(MORSE_DISPLAY_MODES)
+                            ]
+                            save_config(self.config)
                     else:
-                        edit_buffer = str(value)
+                        editing = selected
+                        # Pre-fill with current value
+                        value = getattr(self.config, setting)
+                        if setting in ("single_letter_probability", "morse_volume"):
+                            edit_buffer = str(int(value * 100))
+                        else:
+                            edit_buffer = str(value)
 
     def show_completion(
         self, mode: GameMode, words_completed: int, completed_words: list[str]
