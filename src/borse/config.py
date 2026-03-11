@@ -68,6 +68,7 @@ class Config:
         words_per_game: Number of words to show in each game session.
         single_letter_probability: Probability (0-1) of showing a single letter instead of a word.
         morse_display_mode: How to present Morse code - "visual", "audio", or "both".
+        morse_volume: Audio volume for Morse playback, clamped to [0.0, 1.0].
     """
 
     progress_file: str = field(default_factory=lambda: str(get_default_progress_path()))
