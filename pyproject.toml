@@ -37,6 +37,7 @@ python-version = "3.14"
 
 [dependency-groups]
 dev = [
+    "codespell>=2.4.2",
     "prek>=0.3.1",
     "pytest>=8.0.0",
     "ruff>=0.4.0",
