@@ -13,8 +13,8 @@ default_stages = ["pre-commit"]
 repo = "builtin"
 hooks = [
   { id = "check-executables-have-shebangs" },
-  { id = "check-merge-conflict" },
   { id = "check-json" },
+  { id = "check-merge-conflict" },
   { id = "check-symlinks" },
   { id = "check-toml" },
   { id = "check-yaml" },
@@ -35,45 +35,18 @@ hooks = [
 ]
 
 [[repos]]
-repo = "local"
+repo = "https://github.com/codespell-project/codespell"
+rev = "v2.4.2"
 hooks = [
-  {
-    id = "ruff-format",
-    name = "ruff format",
-    entry = "uv run ruff format",
-    language = "system",
-    types = ["python"]
-  },
-  {
-    id = "ruff-check",
-    name = "ruff check",
-    entry = "uv run ruff check",
-    language = "system",
-    args = ["--fix"],
-    types = ["python"]
-  },
-  {
-    id = "codespell",
-    name = "codespell",
-    entry = "uv run codespell",
-    language = "system",
-    types = ["text"]
-  },
-  {
-    id = "ty",
-    name = "ty",
-    entry = "uv run ty check .",
-    language = "system",
-    types = ["python"]
-  },
-  {
-    id = "pytest",
-    name = "pytest",
-    entry = "uv run pytest",
-    pass_filenames = false,
-    language = "system",
-    stages = ["pre-push"],
-  }
+  { id = "codespell" }
+]
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.15.7"
+hooks = [
+  { id = "ruff-check" },
+  { id = "ruff-format" }
 ]
 
 [[repos]]
@@ -88,7 +61,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.10.10"
+rev = "0.10.12"
 hooks = [
   { id = "uv-lock" }
 ]
@@ -118,5 +91,24 @@ hooks = [
       "temp",
       "tests"
     ]
+  }
+]
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "ty",
+    name = "ty",
+    entry = "uv run ty check .",
+    language = "system",
+    types = ["python"]
+  },
+  {
+    id = "pytest",
+    name = "pytest",
+    entry = "uv run pytest",
+    pass_filenames = false,
+    language = "system",
+    stages = ["pre-push"],
   }
 ]
