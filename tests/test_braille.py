@@ -110,7 +110,7 @@ class TestSyllableBreaks:
         assert 5 in breaks
 
     def test_other_break_before_t(self) -> None:
-        # "other" = o|ther; break before 't' at index 1
+        # "other": break before 't' at index 1
         breaks = _get_syllable_breaks("other")
         assert 1 in breaks
 
@@ -122,7 +122,9 @@ class TestSyllableBreaks:
 
     def test_spans_break_basic(self) -> None:
         assert _spans_break(3, 5, frozenset({4})) is True
-        assert _spans_break(1, 3, frozenset({1})) is False  # break at boundary, not inside
+        assert (
+            _spans_break(1, 3, frozenset({1})) is False
+        )  # break at boundary, not inside
         assert _spans_break(4, 6, frozenset({4})) is False
 
 
