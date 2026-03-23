@@ -4,7 +4,6 @@ from borse.braille import (
     FILLED,
     GRADE2_GROUP_CONTRACTIONS,
     GRADE2_WORD_CONTRACTIONS,
-    LETTER_WORDSIGNS,
     UNFILLED,
     _apply_grade2,
     _get_syllable_breaks,
@@ -160,18 +159,17 @@ class TestGrade2Contractions:
         labels = [lbl for lbl, _ in segments]
         assert "GH" not in labels
 
-    def test_other_th_contracted(self) -> None:
-        # "other" = o|ther; 'th' is the onset of the second syllable → contract
+    def test_other_the_contracted(self) -> None:
+        # "other" = o·[the]·r — THE (3-char) wins over TH (2-char) greedily
         segments = _apply_grade2("other")
         labels = [lbl for lbl, _ in segments]
-        assert "TH" in labels
+        assert "THE" in labels
 
-    def test_together_th_and_er_contracted(self) -> None:
-        # "together" → to|ge|ther: 'th' and 'er' both in same syllable → contract
+    def test_together_the_contracted(self) -> None:
+        # "together" = t·o·g·e·[the]·r — THE wins greedily at position 4
         segments = _apply_grade2("together")
         labels = [lbl for lbl, _ in segments]
-        assert "TH" in labels
-        assert "ER" in labels
+        assert "THE" in labels
 
     def test_shower_sh_ow_er_contracted(self) -> None:
         # "shower" = show|er; 'sh', 'ow', 'er' all valid
@@ -191,16 +189,33 @@ class TestGrade2Contractions:
         assert len(segments) == 1
         assert segments[0] == ("AND", GRADE2_WORD_CONTRACTIONS["AND"])
 
-    def test_whole_word_not_partial(self) -> None:
-        # "there" is not the word "the", so word-sign must NOT apply
-        segments = _apply_grade2("there")
-        labels = [lbl for lbl, _ in segments]
-        assert "THE" not in labels  # word-sign excluded; 'TH' group-sign is fine
+    def test_dot_patterns_st(self) -> None:
+        assert GRADE2_GROUP_CONTRACTIONS["ST"] == (3, 4)
 
-    def test_letter_wordsigns_present(self) -> None:
-        assert LETTER_WORDSIGNS["B"] == "but"
-        assert LETTER_WORDSIGNS["T"] == "that"
-        assert LETTER_WORDSIGNS["Y"] == "you"
+    def test_word_contraction_in_substring_then(self) -> None:
+        # [the]n — THE applies within "then"
+        segments = _apply_grade2("then")
+        labels = [lbl for lbl, _ in segments]
+        assert "THE" in labels
+
+    def test_word_contraction_in_substring_hand(self) -> None:
+        # h[and] — AND applies within "hand"
+        segments = _apply_grade2("hand")
+        labels = [lbl for lbl, _ in segments]
+        assert "AND" in labels
+
+    def test_word_contraction_in_substring_roof(self) -> None:
+        # ro[of] — OF applies within "roof"
+        segments = _apply_grade2("roof")
+        labels = [lbl for lbl, _ in segments]
+        assert "OF" in labels
+
+    def test_word_contraction_in_substring_forest(self) -> None:
+        # [for]e[st] — FOR and ST both apply
+        segments = _apply_grade2("forest")
+        labels = [lbl for lbl, _ in segments]
+        assert "FOR" in labels
+        assert "ST" in labels
 
 
 class TestGrade2DisplayLines:
@@ -214,15 +229,9 @@ class TestGrade2DisplayLines:
         lines = get_display_lines("other", grade=1)
         assert len(lines) == 5
 
-    def test_single_letter_with_wordsign_annotation(self) -> None:
+    def test_single_letter_no_annotation(self) -> None:
+        # Single letters have no contraction, so annotation is empty
         lines = get_display_lines("b", grade=2)
-        assert len(lines) == 6
-        # Last line should mention "BUT"
-        assert "BUT" in lines[5]
-
-    def test_single_letter_without_wordsign(self) -> None:
-        # 'a' and 'i' have no wordsign in Grade 2
-        lines = get_display_lines("a", grade=2)
         assert len(lines) == 6
         assert lines[5] == ""
 

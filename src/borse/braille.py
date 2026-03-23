@@ -48,44 +48,19 @@ GRADE2_GROUP_CONTRACTIONS: dict[str, tuple[int, ...]] = {
     "OU": (1, 2, 5, 6),
     "OW": (2, 4, 6),
     "AR": (3, 4, 5),
+    "ST": (3, 4),
     "ING": (3, 4, 6),
 }
 
-# Grade 2: strong word-sign contractions (used only when the entire word matches)
+# Grade 2: word-sign contractions.  These represent fixed meaningful units and
+# may appear anywhere in a word (the, and, for, of, with) — e.g. [the]n,
+# h[and], ro[of], [for]e[st] — without syllable-boundary checking.
 GRADE2_WORD_CONTRACTIONS: dict[str, tuple[int, ...]] = {
     "AND": (1, 2, 3, 4, 6),
     "FOR": (1, 2, 3, 4, 5, 6),
     "OF": (1, 2, 3, 5, 6),
     "THE": (2, 3, 4, 6),
     "WITH": (2, 3, 4, 5, 6),
-}
-
-# Grade 2 alphabetic word signs: the single letter stands for the given word
-# when used in isolation (Grade 1 cell, different meaning in Grade 2 context)
-LETTER_WORDSIGNS: dict[str, str] = {
-    "B": "but",
-    "C": "can",
-    "D": "do",
-    "E": "every",
-    "F": "from",
-    "G": "go",
-    "H": "have",
-    "J": "just",
-    "K": "knowledge",
-    "L": "like",
-    "M": "more",
-    "N": "not",
-    "P": "people",
-    "Q": "quite",
-    "R": "rather",
-    "S": "so",
-    "T": "that",
-    "U": "us",
-    "V": "very",
-    "W": "will",
-    "X": "it",
-    "Y": "you",
-    "Z": "as",
 }
 
 # Filled and unfilled circles for display
@@ -180,6 +155,16 @@ def _spans_break(start: int, end: int, breaks: frozenset[int]) -> bool:
 # Grade 2 contraction engine
 # ---------------------------------------------------------------------------
 
+# Pre-sorted list for _apply_grade2: (seq, dots, needs_syllable_break_check).
+# Word contractions are tried without break-checking (they represent fixed
+# meaningful units); group contractions require the break check.
+# Sorted longest-first so longer sequences win greedily.
+_SORTED_CONTRACTIONS: list[tuple[str, tuple[int, ...], bool]] = sorted(
+    [(s, d, False) for s, d in GRADE2_WORD_CONTRACTIONS.items()]
+    + [(s, d, True) for s, d in GRADE2_GROUP_CONTRACTIONS.items()],
+    key=lambda x: -len(x[0]),
+)
+
 
 def _apply_grade2(word: str) -> list[tuple[str, tuple[int, ...]]]:
     """Decompose *word* into Grade 2 Braille cells.
@@ -187,27 +172,21 @@ def _apply_grade2(word: str) -> list[tuple[str, tuple[int, ...]]]:
     Returns a list of (label, dots) pairs where *label* is the original
     letters for that cell and *dots* is the dot pattern.
 
-    Whole-word contractions (AND, FOR, OF, THE, WITH) are only applied when
-    the entire word matches.  Group contractions (CH, TH, ER, …) are applied
-    greedily left-to-right, longest first, but are rejected whenever the
-    letters would span a syllable boundary.
+    Word contractions (AND, FOR, OF, THE, WITH) may appear anywhere in a word
+    without syllable-boundary checking.  Group contractions (CH, GH, TH, ER,
+    ST, …) are applied greedily left-to-right, longest first, but are rejected
+    when the letters would span a syllable boundary.
     """
     w = word.upper()
-
-    # Whole-word contractions take priority
-    if w in GRADE2_WORD_CONTRACTIONS:
-        return [(w, GRADE2_WORD_CONTRACTIONS[w])]
-
     breaks = _get_syllable_breaks(word)
     result: list[tuple[str, tuple[int, ...]]] = []
     i = 0
     while i < len(w):
         matched = False
-        # Try group contractions, longest first
-        for seq in sorted(GRADE2_GROUP_CONTRACTIONS, key=len, reverse=True):
+        for seq, dots, check_break in _SORTED_CONTRACTIONS:
             end = i + len(seq)
-            if w[i:end] == seq and not _spans_break(i, end, breaks):
-                result.append((seq, GRADE2_GROUP_CONTRACTIONS[seq]))
+            if w[i:end] == seq and (not check_break or not _spans_break(i, end, breaks)):
+                result.append((seq, dots))
                 i = end
                 matched = True
                 break
@@ -215,7 +194,6 @@ def _apply_grade2(word: str) -> list[tuple[str, tuple[int, ...]]]:
             char = w[i]
             if char in BRAILLE_PATTERNS:
                 result.append((char, BRAILLE_PATTERNS[char]))
-            # Skip characters with no Braille pattern (spaces, punctuation, etc.)
             i += 1
     return result
 
@@ -304,41 +282,19 @@ def get_display_lines(word: str, grade: int = 1) -> list[str]:
 
 def _get_display_lines_grade2(word: str) -> list[str]:
     """Build Grade 2 display lines for *word* (called by get_display_lines)."""
-    w = word.upper()
-
-    # ---- Single-letter case ----
-    if len(w) == 1 and w in BRAILLE_PATTERNS:
-        cell = _dots_to_cell(BRAILLE_PATTERNS[w])
-        lines: list[str] = []
-        for row in range(3):
-            lines.append(cell[row])
-            if row < 2:
-                lines.append("")
-        wordsign = LETTER_WORDSIGNS.get(w)
-        lines.append(f"(grade 2 sign: {wordsign.upper()})" if wordsign else "")
-        return lines
-
-    # ---- Multi-letter word ----
     segments = _apply_grade2(word)
     if not segments:
         return ["", "", "", "", "", ""]
 
     cells = [_dots_to_cell(dots) for _, dots in segments]
-
-    lines = []
+    lines: list[str] = []
     for row in range(3):
-        line = "   ".join(cell[row] for cell in cells)
-        lines.append(line)
+        lines.append("   ".join(cell[row] for cell in cells))
         if row < 2:
             lines.append("")
 
     # Annotation: show contracted segments separated by middle-dot
     seg_labels = [label for label, _ in segments]
     has_contraction = any(len(lbl) > 1 for lbl in seg_labels)
-    if has_contraction:
-        annotation = "GR2: " + "\u00b7".join(seg_labels)
-    else:
-        annotation = ""
-    lines.append(annotation)
-
+    lines.append("GR2: " + "\u00b7".join(seg_labels) if has_contraction else "")
     return lines
