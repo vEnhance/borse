@@ -66,6 +66,16 @@ for the first three rows (you're on your own for the last one):
 (Also, `surdwkgo` is also the name of a
 [Taiwanese CodeForces grandmaster](https://codeforces.com/profile/surwdkgo).)
 
+If you're learning Morse code for _actual_ usage rather than puzzle hunt usage
+(meaning you plan to _hear_ the sounds, not see them in a hunt spreadsheet)
+then in fact you need to practice with the sounds and not the visuals.
+It's simply too slow to try to remap sounds visually at 20+ WPM;
+you need to do hear the letter directly from the audio.
+(In fact I think people don't even count the dits and dashes,
+they just hear the letter automatically.)
+So really in this case you should be using a real training
+rather than my silly puzzle hunt hobby project, e.g. <https://lcwo.net/>.
+
 [et]: https://en.wikipedia.org/wiki/E.T._the_Extra-Terrestrial
 [su]: https://en.wikipedia.org/wiki/Su_(Unix)
 [rw]: https://lean-lang.org/doc/reference/latest/Tactic-Proofs/Tactic-Reference/#rw
