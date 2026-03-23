@@ -5,8 +5,8 @@ A terminal curses game for practicing Morse code, Braille, and flag semaphore re
 ## Setup
 
 ```bash
-uv sync           # Install dependencies
-prek install      # Install pre-commit hooks
+uv sync              # Install dependencies
+uv run prek install  # Install pre-commit hooks
 ```
 
 ## Project Structure
@@ -24,13 +24,13 @@ src/borse/
 └── progress.py   # Daily progress tracking
 ```
 
-## Development Commands
+## CI
+
+Before pushing, always make sure this passes:
 
 ```bash
-uv run pytest              # Run all tests (63 tests)
-uv run ruff check src      # Lint
-uv run ruff format src     # Format
-uv run ty check src        # Type check
+uv run prek -a             # All hooks on all files
+uv run pytest              # Run all tests
 ```
 
 ## Configuration
