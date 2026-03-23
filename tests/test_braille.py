@@ -237,7 +237,7 @@ class TestGrade2DisplayLines:
 
     def test_annotation_shows_contractions(self) -> None:
         lines = get_display_lines("other", grade=2)
-        # Annotation line should mention the TH contraction
+        # Annotation line should mention the THE contraction
         assert "TH" in lines[5]
 
     def test_annotation_empty_when_no_contractions(self) -> None:
@@ -250,5 +250,5 @@ class TestGrade2DisplayLines:
         lines_g1 = get_display_lines("other", grade=1)
         lines_g2 = get_display_lines("other", grade=2)
         # Grade 1: 5-letter cells separated by spaces → wider first row
-        # Grade 2: 3 cells (o, th, er) → narrower first row
+        # Grade 2: 3 cells (o, the, r) → narrower first row
         assert len(lines_g2[0]) < len(lines_g1[0])
