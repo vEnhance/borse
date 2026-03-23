@@ -168,7 +168,7 @@ def load_progress(progress_path: Path | str) -> Progress:
         with open(path) as f:
             data = json.load(f)
         return Progress.from_dict(data)
-    except json.JSONDecodeError, OSError:
+    except (json.JSONDecodeError, OSError):
         return Progress()
 
 

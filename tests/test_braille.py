@@ -223,34 +223,16 @@ class TestGrade2Contractions:
 class TestGrade2DisplayLines:
     """Tests for get_display_lines with grade=2."""
 
-    def test_returns_six_lines_for_word(self) -> None:
+    def test_returns_five_lines_grade2(self) -> None:
         lines = get_display_lines("other", grade=2)
-        assert len(lines) == 6
+        assert len(lines) == 5
 
     def test_grade1_still_five_lines(self) -> None:
         lines = get_display_lines("other", grade=1)
         assert len(lines) == 5
 
-    def test_single_letter_no_annotation(self) -> None:
-        # Single letters have no contraction, so annotation is empty
-        lines = get_display_lines("b", grade=2)
-        assert len(lines) == 6
-        assert lines[5] == ""
-
-    def test_annotation_shows_contractions(self) -> None:
-        lines = get_display_lines("other", grade=2)
-        # Annotation line should mention the THE contraction
-        assert "TH" in lines[5]
-
-    def test_annotation_empty_when_no_contractions(self) -> None:
-        # A word with no applicable contractions gets an empty annotation
-        lines = get_display_lines("big", grade=2)
-        assert lines[5] == ""
-
     def test_fewer_cells_when_contracted(self) -> None:
-        # "other" has 5 letters but "th" + "er" reduces cells
         lines_g1 = get_display_lines("other", grade=1)
         lines_g2 = get_display_lines("other", grade=2)
-        # Grade 1: 5-letter cells separated by spaces → wider first row
-        # Grade 2: 3 cells (o, the, r) → narrower first row
+        # Grade 1: 5 letter-cells; Grade 2: 3 cells (o, the, r) → narrower
         assert len(lines_g2[0]) < len(lines_g1[0])

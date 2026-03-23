@@ -304,12 +304,10 @@ def get_display_lines(word: str, grade: int = 1) -> list[str]:
 
     Args:
         word: The word to encode.
-        grade: Braille grade (1 or 2).  Grade 2 applies contractions and
-               appends an annotation line showing the contracted segments.
+        grade: Braille grade (1 or 2).  Grade 2 applies contractions.
 
     Returns:
-        For grade 1: 5 strings (3 rows with blank spacer lines).
-        For grade 2: 6 strings (same 5 plus one annotation line).
+        5 strings (3 rows with blank spacer lines between them).
     """
     if grade == 2:
         return _get_display_lines_grade2(word)
@@ -337,7 +335,7 @@ def _get_display_lines_grade2(word: str) -> list[str]:
     """Build Grade 2 display lines for *word* (called by get_display_lines)."""
     segments = _apply_grade2(word)
     if not segments:
-        return ["", "", "", "", "", ""]
+        return ["", "", "", "", ""]
 
     cells = [_dots_to_cell(dots) for _, dots in segments]
     lines: list[str] = []
@@ -345,9 +343,4 @@ def _get_display_lines_grade2(word: str) -> list[str]:
         lines.append("   ".join(cell[row] for cell in cells))
         if row < 2:
             lines.append("")
-
-    # Annotation: show contracted segments separated by middle-dot
-    seg_labels = [label for label, _ in segments]
-    has_contraction = any(len(lbl) > 1 for lbl in seg_labels)
-    lines.append("GR2: " + "\u00b7".join(seg_labels) if has_contraction else "")
     return lines
