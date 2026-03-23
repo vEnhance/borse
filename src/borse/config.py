@@ -137,7 +137,7 @@ def load_config(config_path: Path | None = None) -> Config:
         with open(config_path, "rb") as f:
             data = tomllib.load(f)
         return Config.from_dict(data)
-    except (tomllib.TOMLDecodeError, OSError):
+    except tomllib.TOMLDecodeError, OSError:
         return Config()
 
 
