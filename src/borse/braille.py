@@ -80,15 +80,66 @@ _VOWELS = frozenset("aeiou")
 _VALID_ONSETS = frozenset(
     {
         # Single consonants
-        "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
-        "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z",
+        "b",
+        "c",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        "m",
+        "n",
+        "p",
+        "q",
+        "r",
+        "s",
+        "t",
+        "v",
+        "w",
+        "x",
+        "y",
+        "z",
         # Two-consonant clusters
-        "bl", "br", "cl", "cr", "dr", "dw", "fl", "fr", "gl", "gr",
-        "kl", "kn", "kw", "pl", "pr", "sc", "sk", "sl", "sm", "sn",
-        "sp", "sq", "st", "sw", "tr", "tw",
-        "ch", "ph", "sh", "th", "wh",
+        "bl",
+        "br",
+        "cl",
+        "cr",
+        "dr",
+        "dw",
+        "fl",
+        "fr",
+        "gl",
+        "gr",
+        "kl",
+        "kn",
+        "kw",
+        "pl",
+        "pr",
+        "sc",
+        "sk",
+        "sl",
+        "sm",
+        "sn",
+        "sp",
+        "sq",
+        "st",
+        "sw",
+        "tr",
+        "tw",
+        "ch",
+        "ph",
+        "sh",
+        "th",
+        "wh",
         # Three-consonant clusters
-        "scr", "spl", "spr", "str", "squ", "thr",
+        "scr",
+        "spl",
+        "spr",
+        "str",
+        "squ",
+        "thr",
     }
 )
 
@@ -185,7 +236,9 @@ def _apply_grade2(word: str) -> list[tuple[str, tuple[int, ...]]]:
         matched = False
         for seq, dots, check_break in _SORTED_CONTRACTIONS:
             end = i + len(seq)
-            if w[i:end] == seq and (not check_break or not _spans_break(i, end, breaks)):
+            if w[i:end] == seq and (
+                not check_break or not _spans_break(i, end, breaks)
+            ):
                 result.append((seq, dots))
                 i = end
                 matched = True

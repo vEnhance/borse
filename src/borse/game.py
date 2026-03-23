@@ -460,7 +460,9 @@ class Game:
                             ]
                             save_config(self.config)
                         elif setting == "braille_grade":
-                            self.config.braille_grade = 2 if self.config.braille_grade == 1 else 1
+                            self.config.braille_grade = (
+                                2 if self.config.braille_grade == 1 else 1
+                            )
                             save_config(self.config)
                     else:
                         editing = selected
