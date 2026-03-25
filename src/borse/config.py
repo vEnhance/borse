@@ -72,6 +72,7 @@ class Config:
     single_letter_probability: float = 0.3
     morse_display_mode: str = "both"
     morse_volume: float = 1.0
+    braille_grade: int = 1
 
     def to_dict(self) -> dict[str, str | int | float]:
         """Convert config to dictionary.
@@ -85,6 +86,7 @@ class Config:
             "single_letter_probability": self.single_letter_probability,
             "morse_display_mode": self.morse_display_mode,
             "morse_volume": self.morse_volume,
+            "braille_grade": self.braille_grade,
         }
 
     @classmethod
@@ -101,6 +103,8 @@ class Config:
         morse_display_mode = raw_mode if raw_mode in MORSE_DISPLAY_MODES else "both"
         raw_vol = float(data.get("morse_volume", 1.0))
         morse_volume = max(0.0, min(1.0, raw_vol))
+        raw_grade = int(data.get("braille_grade", 1))
+        braille_grade = raw_grade if raw_grade in (1, 2) else 1
         return cls(
             progress_file=str(
                 data.get("progress_file", str(get_default_progress_path()))
@@ -109,6 +113,7 @@ class Config:
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),
             morse_display_mode=morse_display_mode,
             morse_volume=morse_volume,
+            braille_grade=braille_grade,
         )
 
 

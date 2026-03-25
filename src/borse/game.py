@@ -245,7 +245,12 @@ class Game:
 
                 # Display the encoded word (or audio-only placeholder)
                 if show_visual:
-                    display_lines = display_func(word)
+                    if mode == GameMode.BRAILLE:
+                        display_lines = braille.get_display_lines(
+                            word, self.config.braille_grade
+                        )
+                    else:
+                        display_lines = display_func(word)
                     for i, line in enumerate(display_lines):
                         with contextlib.suppress(curses.error):
                             self.stdscr.addstr(row + i, 4, line)
@@ -344,7 +349,7 @@ class Game:
         # Settings that use free-text editing
         text_settings = ["words_per_game", "single_letter_probability", "morse_volume"]
         # Settings that cycle through fixed choices (setting -> list of options)
-        cycle_settings = ["morse_display_mode"]
+        cycle_settings = ["morse_display_mode", "braille_grade"]
         settings_items = text_settings + cycle_settings
         editing: int | None = None
         edit_buffer = ""
@@ -453,6 +458,11 @@ class Game:
                             self.config.morse_display_mode = MORSE_DISPLAY_MODES[
                                 (idx + 1) % len(MORSE_DISPLAY_MODES)
                             ]
+                            save_config(self.config)
+                        elif setting == "braille_grade":
+                            self.config.braille_grade = (
+                                2 if self.config.braille_grade == 1 else 1
+                            )
                             save_config(self.config)
                     else:
                         editing = selected
