@@ -295,20 +295,35 @@ class Game:
                 # Show completed words in green at the bottom
                 if completed_words:
                     try:
-                        # Calculate available space
                         available_rows = height - row - 1
                         if available_rows > 0:
-                            if curses.has_colors():
-                                self.stdscr.attron(curses.color_pair(1))
-                            self.stdscr.addstr(row, 2, "Completed: ")
-                            if curses.has_colors():
-                                self.stdscr.attroff(curses.color_pair(1))
+                            prefix = "Completed: "
+                            indent = len(prefix)  # 11
+                            col_start = 2
+                            line_width = _width - col_start - indent - 2
 
-                            # Join words with commas, fitting on available lines
-                            words_str = ", ".join(w.upper() for w in completed_words)
+                            # Wrap words into lines that fit
+                            lines: list[str] = []
+                            current_line = ""
+                            for cw in completed_words:
+                                cw_upper = cw.upper()
+                                entry = (", " + cw_upper) if current_line else cw_upper
+                                if (
+                                    current_line
+                                    and len(current_line) + len(entry) > line_width
+                                ):
+                                    lines.append(current_line)
+                                    current_line = cw_upper
+                                else:
+                                    current_line += entry
+                            if current_line:
+                                lines.append(current_line)
+
                             if curses.has_colors():
                                 self.stdscr.attron(curses.color_pair(1))
-                            self.stdscr.addstr(row, 13, words_str[: _width - 15])
+                            self.stdscr.addstr(row, col_start, prefix)
+                            for i, line in enumerate(lines[:available_rows]):
+                                self.stdscr.addstr(row + i, col_start + indent, line)
                             if curses.has_colors():
                                 self.stdscr.attroff(curses.color_pair(1))
                     except curses.error:
