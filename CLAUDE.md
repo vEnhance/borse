@@ -11,7 +11,7 @@ uv run prek install  # Install pre-commit hooks
 
 ## Project Structure
 
-```
+```text
 src/borse/
 ├── main.py       # Entry point, curses wrapper
 ├── game.py       # Curses UI, menu, and game loop
