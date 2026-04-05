@@ -236,3 +236,28 @@ class TestGrade2DisplayLines:
         lines_g2 = get_display_lines("other", grade=2)
         # Grade 1: 5 letter-cells; Grade 2: 3 cells (o, the, r) → narrower
         assert len(lines_g2[0]) < len(lines_g1[0])
+
+    def test_single_glyph_ch_renders_one_cell(self) -> None:
+        # "CH" is a grade 2 contraction; grade=2 should render exactly one cell
+        lines = get_display_lines("CH", grade=2)
+        assert len(lines) == 5
+        # A single cell has no "   " separator
+        assert "   " not in lines[0]
+
+    def test_single_glyph_the_renders_one_cell(self) -> None:
+        # "THE" is a word contraction; grade=2 renders it as one cell
+        lines_g2 = get_display_lines("THE", grade=2)
+        lines_g1 = get_display_lines("THE", grade=1)
+        assert len(lines_g2) == 5
+        # Grade 2 single cell is narrower than 3 grade-1 cells
+        assert len(lines_g2[0]) < len(lines_g1[0])
+
+    def test_single_glyph_ch_correct_dots(self) -> None:
+        # CH has dots (1, 6): top-left filled, bottom-right filled
+        lines = get_display_lines("CH", grade=2)
+        # Row 0 (dots 1, 4): dot 1 filled, dot 4 not
+        assert lines[0] == f"{FILLED} {UNFILLED}"
+        # Row 2 (dots 2, 5): neither
+        assert lines[2] == f"{UNFILLED} {UNFILLED}"
+        # Row 4 (dots 3, 6): dot 6 filled, dot 3 not
+        assert lines[4] == f"{UNFILLED} {FILLED}"

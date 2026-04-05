@@ -30,15 +30,23 @@ def get_random_letter() -> str:
     return random.choice(LETTERS)
 
 
-def get_random_word_or_letter(single_letter_probability: float = 0.3) -> str:
-    """Get either a random word or a single letter based on probability.
+def get_random_word_or_letter(
+    single_letter_probability: float = 0.3,
+    extra_glyphs: list[str] | None = None,
+) -> str:
+    """Get either a random word or a single glyph based on probability.
 
     Args:
-        single_letter_probability: Probability (0-1) of returning a single letter.
+        single_letter_probability: Probability (0-1) of returning a single glyph.
+        extra_glyphs: Additional glyph strings (e.g. Grade 2 Braille contractions
+            like "CH", "THE") to include in the single-glyph pool alongside A-Z.
 
     Returns:
-        A random word or single letter.
+        A random word or a glyph from the single-glyph pool.
     """
     if random.random() < single_letter_probability:
-        return get_random_letter()
+        pool: list[str] = list(LETTERS)
+        if extra_glyphs:
+            pool = pool + extra_glyphs
+        return random.choice(pool)
     return get_random_word()

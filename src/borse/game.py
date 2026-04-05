@@ -227,7 +227,14 @@ class Game:
         completed_words: list[str] = []  # Track completed words
 
         while words_completed < total_words:
-            word = get_random_word_or_letter(self.config.single_letter_probability)
+            extra_glyphs = None
+            if mode == GameMode.BRAILLE and self.config.braille_grade == 2:
+                extra_glyphs = list(braille.GRADE2_GROUP_CONTRACTIONS) + list(
+                    braille.GRADE2_WORD_CONTRACTIONS
+                )
+            word = get_random_word_or_letter(
+                self.config.single_letter_probability, extra_glyphs
+            )
             user_input = ""
             morse_mode = self.config.morse_display_mode
             play_audio = mode == GameMode.MORSE and morse_mode in ("audio", "both")
