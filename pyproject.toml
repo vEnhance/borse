@@ -7,7 +7,7 @@ dependencies = [
     "tomli-w>=1.0.0",
 ]
 authors = [{ name = "Evan Chen", email = "evan@evanchen.cc" }]
-license = { text = "MIT" }
+license = "MIT"
 urls = { repository = "https://github.com/vEnhance/borse" }
 dynamic = ["version"]
 
