@@ -257,8 +257,8 @@ class Game:
         completed_words: list[str] = []  # Track completed words
         start_time = datetime.now(timezone.utc)
 
-        # Non-blocking getch so the timer can refresh each second
-        self.stdscr.timeout(1000)
+        # Non-blocking getch so the timer refreshes smoothly
+        self.stdscr.timeout(100)
 
         try:
             while words_completed < total_words:
