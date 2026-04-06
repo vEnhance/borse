@@ -123,6 +123,10 @@ class Game:
             "[O] Options",
             "[Q] Quit",
         ]
+        # Fixed column for "Last run" labels — aligned past the widest mode item
+        last_run_col = (
+            4 + max(len(f"  {item}  ") for item in menu_items[: len(modes)]) + 2
+        )
 
         while True:
             row = self.draw_title("BORSE - Braille mORse SEmaphore, by vEnhance")
@@ -187,7 +191,6 @@ class Game:
                         last_run = self.progress.get_last_completed_run(mode.value)
                         if last_run is not None:
                             run_label = f"Last run: {last_run.format_duration()}"
-                            x_pos = 4 + len(f"  {item}  ") + 2
                             is_current = last_run.start_time >= self.session_start_time
                             if curses.has_colors():
                                 if is_current:
@@ -196,7 +199,7 @@ class Game:
                                     self.stdscr.attron(
                                         curses.color_pair(4) | curses.A_DIM
                                     )
-                            self.stdscr.addstr(row + i, x_pos, run_label)
+                            self.stdscr.addstr(row + i, last_run_col, run_label)
                             if curses.has_colors():
                                 if is_current:
                                     self.stdscr.attroff(curses.color_pair(1))
