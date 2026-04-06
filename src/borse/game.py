@@ -3,7 +3,7 @@
 import contextlib
 import curses
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
@@ -68,7 +68,7 @@ class Game:
         self.config = load_config()
         self.progress = load_progress(self.config.progress_file)
         self.morse_player = MorsePlayer()
-        self.session_start_time = datetime.now().isoformat()
+        self.session_start_time = datetime.now(timezone.utc).isoformat()
 
         # Setup curses
         curses.curs_set(1)  # Show cursor
@@ -252,7 +252,7 @@ class Game:
         words_completed = 0
         total_words = self.config.words_per_game
         completed_words: list[str] = []  # Track completed words
-        start_time = datetime.now()
+        start_time = datetime.now(timezone.utc)
 
         # Non-blocking getch so the timer can refresh each second
         self.stdscr.timeout(1000)
@@ -277,7 +277,7 @@ class Game:
                     self.morse_player.play(word, self.config.morse_volume)
 
                 while True:
-                    elapsed = (datetime.now() - start_time).total_seconds()
+                    elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                     timer_str = format_duration(elapsed)
                     row = self.draw_title(
                         f"{mode_name} - Word {words_completed + 1}/{total_words}"
@@ -389,7 +389,7 @@ class Game:
                         continue
                     elif key == 27:  # Escape
                         self.morse_player.stop()
-                        end_time = datetime.now()
+                        end_time = datetime.now(timezone.utc)
                         run = Run(
                             mode=mode.value,
                             start_time=start_time.isoformat(),
@@ -417,7 +417,7 @@ class Game:
             self.stdscr.timeout(-1)  # Restore blocking mode
 
         # All words completed
-        end_time = datetime.now()
+        end_time = datetime.now(timezone.utc)
         run = Run(
             mode=mode.value,
             start_time=start_time.isoformat(),

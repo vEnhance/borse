@@ -23,7 +23,26 @@ def main() -> int:
         action="version",
         version=f"%(prog)s {__version__}",
     )
-    parser.parse_args()
+    parser.add_argument(
+        "--migrate",
+        action="store_true",
+        help="Migrate progress.json from the old daily format to the new run-based format.",
+    )
+    args = parser.parse_args()
+
+    if args.migrate:
+        from borse.config import load_config
+        from borse.migrate import migrate_progress
+
+        config = load_config()
+        if migrate_progress(config.progress_file):
+            print(f"Migrated {config.progress_file} to the new run-based format.")
+        else:
+            print(
+                "Nothing to migrate: file is already in the new format,"
+                " does not exist, or could not be read."
+            )
+        return 0
 
     try:
         curses.wrapper(run_game)

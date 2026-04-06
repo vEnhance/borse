@@ -63,12 +63,15 @@ class Run:
 
     @property
     def date_str(self) -> str:
-        """Get the date of this run as an ISO date string (YYYY-MM-DD).
+        """Get the local-time date of this run as an ISO date string (YYYY-MM-DD).
+
+        The stored timestamp is UTC; this converts to the current local timezone
+        before extracting the date so that day boundaries match the user's clock.
 
         Returns:
-            ISO date string derived from start_time.
+            ISO date string in the local timezone.
         """
-        return self.start_time[:10]
+        return datetime.fromisoformat(self.start_time).astimezone().date().isoformat()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary.

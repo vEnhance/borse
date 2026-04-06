@@ -1,7 +1,7 @@
 """Tests for progress tracking."""
 
 import tempfile
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -23,14 +23,22 @@ def make_run(
     completed: bool = True,
     date_str: str = "2024-01-15",
     duration_seconds: float = 120.0,
+    start_utc: datetime | None = None,
 ) -> Run:
-    """Helper to create a Run with sensible defaults."""
-    start = datetime.fromisoformat(f"{date_str}T10:00:00")
-    end = start + timedelta(seconds=duration_seconds)
+    """Helper to create a Run with sensible defaults.
+
+    Timestamps are stored as UTC.  When date_str is given, the run starts at
+    noon UTC on that date (safe for all real-world UTC offsets up to ±12 h).
+    Pass start_utc directly when you need the run to fall on "today" locally.
+    """
+    if start_utc is None:
+        year, month, day = int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10])
+        start_utc = datetime(year, month, day, 12, 0, 0, tzinfo=timezone.utc)
+    end_utc = start_utc + timedelta(seconds=duration_seconds)
     return Run(
         mode=mode,
-        start_time=start.isoformat(),
-        end_time=end.isoformat(),
+        start_time=start_utc.isoformat(),
+        end_time=end_utc.isoformat(),
         num_words=num_words,
         completed=completed,
     )
@@ -132,11 +140,11 @@ class TestProgress:
         assert today.total_words == 0
 
     def test_get_today_counts_todays_runs(self) -> None:
-        today_str = date.today().isoformat()
+        now_utc = datetime.now(timezone.utc)
         progress = Progress(
             runs=[
-                make_run("morse", num_words=3, date_str=today_str),
-                make_run("braille", num_words=2, date_str=today_str),
+                make_run("morse", num_words=3, start_utc=now_utc),
+                make_run("braille", num_words=2, start_utc=now_utc),
                 make_run("morse", num_words=5, date_str="2024-01-01"),  # other day
             ]
         )
