@@ -95,7 +95,7 @@ class Game:
         Returns:
             The next available row.
         """
-        self.stdscr.clear()
+        self.stdscr.erase()
         try:
             if curses.has_colors():
                 self.stdscr.attron(curses.color_pair(2) | curses.A_BOLD)
@@ -279,106 +279,126 @@ class Game:
                 if play_audio:
                     self.morse_player.play(word, self.config.morse_volume)
 
+                needs_full_redraw = True
+                timer_row = 3  # row returned by draw_title; updated on first draw
+                input_row = 0  # set during first full draw
+                input_start = 17
+
                 while True:
                     elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                     timer_str = format_duration(elapsed)
-                    row = self.draw_title(
-                        f"{mode_name} - Word {words_completed + 1}/{total_words}"
-                        f"    {timer_str}"
-                    )
-                    height, _width = self.stdscr.getmaxyx()
 
-                    # Display the encoded word (or audio-only placeholder)
-                    if show_visual:
-                        if mode == GameMode.BRAILLE:
-                            display_lines = braille.get_display_lines(
-                                word, self.config.braille_grade
-                            )
+                    if needs_full_redraw:
+                        row = self.draw_title(
+                            f"{mode_name} - Word {words_completed + 1}/{total_words}"
+                        )
+                        timer_row = row
+                        row += 2  # reserve timer line + blank line
+                        height, _width = self.stdscr.getmaxyx()
+
+                        # Display the encoded word (or audio-only placeholder)
+                        if show_visual:
+                            if mode == GameMode.BRAILLE:
+                                display_lines = braille.get_display_lines(
+                                    word, self.config.braille_grade
+                                )
+                            else:
+                                display_lines = display_func(word)
+                            for i, line in enumerate(display_lines):
+                                with contextlib.suppress(curses.error):
+                                    self.stdscr.addstr(row + i, 4, line)
+                            row += len(display_lines) + 2
                         else:
-                            display_lines = display_func(word)
-                        for i, line in enumerate(display_lines):
                             with contextlib.suppress(curses.error):
-                                self.stdscr.addstr(row + i, 4, line)
-                        row += len(display_lines) + 2
-                    else:
-                        with contextlib.suppress(curses.error):
-                            self.stdscr.addstr(
-                                row, 4, "[audio only - press Tab to replay]"
-                            )
-                        row += 3
+                                self.stdscr.addstr(
+                                    row, 4, "[audio only - press Tab to replay]"
+                                )
+                            row += 3
 
-                    # Input prompt - show user input in UPPERCASE
-                    input_row = row
-                    input_start = 17
-                    try:
-                        self.stdscr.addstr(row, 2, "Type the word: ")
-                        display_input = user_input.upper()
-                        self.stdscr.addstr(row, input_start, display_input)
-
-                        # Show correct characters in green
-                        for i, char in enumerate(user_input):
-                            if i < len(word) and char.lower() == word[i].lower():
-                                if curses.has_colors():
-                                    self.stdscr.attron(curses.color_pair(1))
-                                self.stdscr.addstr(row, input_start + i, char.upper())
-                                if curses.has_colors():
-                                    self.stdscr.attroff(curses.color_pair(1))
-                    except curses.error:
-                        pass
-
-                    row += 2
-
-                    # Instructions
-                    with contextlib.suppress(curses.error):
-                        if play_audio:
-                            self.stdscr.addstr(
-                                row, 2, "Tab: replay audio  |  Esc: return to menu"
-                            )
-                        else:
-                            self.stdscr.addstr(row, 2, "Press Esc to return to menu")
-
-                    row += 2
-
-                    # Show completed words in green at the bottom
-                    if completed_words:
+                        # Input prompt - show user input in UPPERCASE
+                        input_row = row
                         try:
-                            available_rows = height - row - 1
-                            if available_rows > 0:
-                                prefix = "Completed: "
-                                indent = len(prefix)  # 11
-                                col_start = 2
-                                line_width = _width - col_start - indent - 2
+                            self.stdscr.addstr(row, 2, "Type the word: ")
+                            display_input = user_input.upper()
+                            self.stdscr.addstr(row, input_start, display_input)
 
-                                # Wrap words into lines that fit
-                                lines: list[str] = []
-                                current_line = ""
-                                for cw in completed_words:
-                                    cw_upper = cw.upper()
-                                    entry = (
-                                        (", " + cw_upper) if current_line else cw_upper
-                                    )
-                                    if (
-                                        current_line
-                                        and len(current_line) + len(entry) > line_width
-                                    ):
-                                        lines.append(current_line)
-                                        current_line = cw_upper
-                                    else:
-                                        current_line += entry
-                                if current_line:
-                                    lines.append(current_line)
-
-                                if curses.has_colors():
-                                    self.stdscr.attron(curses.color_pair(1))
-                                self.stdscr.addstr(row, col_start, prefix)
-                                for i, line in enumerate(lines[:available_rows]):
+                            # Show correct characters in green
+                            for i, char in enumerate(user_input):
+                                if i < len(word) and char.lower() == word[i].lower():
+                                    if curses.has_colors():
+                                        self.stdscr.attron(curses.color_pair(1))
                                     self.stdscr.addstr(
-                                        row + i, col_start + indent, line
+                                        row, input_start + i, char.upper()
                                     )
-                                if curses.has_colors():
-                                    self.stdscr.attroff(curses.color_pair(1))
+                                    if curses.has_colors():
+                                        self.stdscr.attroff(curses.color_pair(1))
                         except curses.error:
                             pass
+
+                        row += 2
+
+                        # Instructions
+                        with contextlib.suppress(curses.error):
+                            if play_audio:
+                                self.stdscr.addstr(
+                                    row, 2, "Tab: replay audio  |  Esc: return to menu"
+                                )
+                            else:
+                                self.stdscr.addstr(
+                                    row, 2, "Press Esc to return to menu"
+                                )
+
+                        row += 2
+
+                        # Show completed words in green at the bottom
+                        if completed_words:
+                            try:
+                                available_rows = height - row - 1
+                                if available_rows > 0:
+                                    prefix = "Completed: "
+                                    indent = len(prefix)  # 11
+                                    col_start = 2
+                                    line_width = _width - col_start - indent - 2
+
+                                    # Wrap words into lines that fit
+                                    lines: list[str] = []
+                                    current_line = ""
+                                    for cw in completed_words:
+                                        cw_upper = cw.upper()
+                                        entry = (
+                                            (", " + cw_upper)
+                                            if current_line
+                                            else cw_upper
+                                        )
+                                        if (
+                                            current_line
+                                            and len(current_line) + len(entry)
+                                            > line_width
+                                        ):
+                                            lines.append(current_line)
+                                            current_line = cw_upper
+                                        else:
+                                            current_line += entry
+                                    if current_line:
+                                        lines.append(current_line)
+
+                                    if curses.has_colors():
+                                        self.stdscr.attron(curses.color_pair(1))
+                                    self.stdscr.addstr(row, col_start, prefix)
+                                    for i, line in enumerate(lines[:available_rows]):
+                                        self.stdscr.addstr(
+                                            row + i, col_start + indent, line
+                                        )
+                                    if curses.has_colors():
+                                        self.stdscr.attroff(curses.color_pair(1))
+                            except curses.error:
+                                pass
+
+                        needs_full_redraw = False
+
+                    # Always overwrite the timer in place — no erase needed
+                    with contextlib.suppress(curses.error):
+                        self.stdscr.addstr(timer_row, 2, f"Time: {timer_str}")
 
                     # Position cursor at the typing location
                     with contextlib.suppress(curses.error):
@@ -388,7 +408,7 @@ class Game:
 
                     key = self.stdscr.getch()
 
-                    if key == -1:  # Timeout - redraw to update timer
+                    if key == -1:  # Timeout - timer updated above, nothing else to do
                         continue
                     elif key == 27:  # Escape
                         self.morse_player.stop()
@@ -408,8 +428,10 @@ class Game:
                         self.morse_player.replay()
                     elif key in (curses.KEY_BACKSPACE, 127, 8):
                         user_input = user_input[:-1]
+                        needs_full_redraw = True
                     elif 32 <= key <= 126:  # Printable characters
                         user_input += chr(key)
+                        needs_full_redraw = True
 
                         # Check if word matches
                         if user_input.lower() == word.lower():
