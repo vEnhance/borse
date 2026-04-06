@@ -3,14 +3,113 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from typing import Any
+
+
+def format_duration(seconds: float) -> str:
+    """Format a duration in seconds as MM:SS.
+
+    Args:
+        seconds: Duration in seconds.
+
+    Returns:
+        Formatted string like "05:23".
+    """
+    total = int(seconds)
+    minutes = total // 60
+    secs = total % 60
+    return f"{minutes:02d}:{secs:02d}"
+
+
+@dataclass
+class Run:
+    """A single game run (one playthrough of a game mode).
+
+    Attributes:
+        mode: The game mode ('morse', 'braille', 'semaphore', or 'a1z26').
+        start_time: ISO 8601 datetime string when the run started.
+        end_time: ISO 8601 datetime string when the run ended.
+        num_words: Number of words completed in this run.
+        completed: True if finished all words, False if escaped early.
+    """
+
+    mode: str
+    start_time: str
+    end_time: str
+    num_words: int
+    completed: bool
+
+    def duration_seconds(self) -> float:
+        """Get the duration of this run in seconds.
+
+        Returns:
+            Duration in seconds.
+        """
+        start = datetime.fromisoformat(self.start_time)
+        end = datetime.fromisoformat(self.end_time)
+        return (end - start).total_seconds()
+
+    def format_duration(self) -> str:
+        """Format the duration of this run as MM:SS.
+
+        Returns:
+            Formatted string like "05:23".
+        """
+        return format_duration(self.duration_seconds())
+
+    @property
+    def date_str(self) -> str:
+        """Get the date of this run as an ISO date string (YYYY-MM-DD).
+
+        Returns:
+            ISO date string derived from start_time.
+        """
+        return self.start_time[:10]
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert to dictionary.
+
+        Returns:
+            Dictionary representation.
+        """
+        return {
+            "mode": self.mode,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "num_words": self.num_words,
+            "completed": self.completed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> Run:
+        """Create from dictionary.
+
+        Args:
+            data: Dictionary with run values.
+
+        Returns:
+            Run instance.
+
+        Raises:
+            KeyError: If required keys are missing.
+            ValueError: If values cannot be converted to the right types.
+        """
+        return cls(
+            mode=str(data["mode"]),
+            start_time=str(data["start_time"]),
+            end_time=str(data["end_time"]),
+            num_words=int(data["num_words"]),
+            completed=bool(data["completed"]),
+        )
 
 
 @dataclass
 class DailyProgress:
-    """Progress for a single day.
+    """Aggregated word counts for a single day, computed from runs.
 
     Attributes:
         morse_words: Number of Morse code words answered.
@@ -26,7 +125,7 @@ class DailyProgress:
 
     @property
     def total_words(self) -> int:
-        """Get total words answered today.
+        """Get total words answered.
 
         Returns:
             Sum of all words across all modes.
@@ -38,105 +137,88 @@ class DailyProgress:
             + self.a1z26_words
         )
 
-    def to_dict(self) -> dict[str, int]:
-        """Convert to dictionary.
-
-        Returns:
-            Dictionary representation.
-        """
-        return {
-            "morse_words": self.morse_words,
-            "braille_words": self.braille_words,
-            "semaphore_words": self.semaphore_words,
-            "a1z26_words": self.a1z26_words,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict[str, int]) -> DailyProgress:
-        """Create from dictionary.
-
-        Args:
-            data: Dictionary with progress values.
-
-        Returns:
-            DailyProgress instance.
-        """
-        return cls(
-            morse_words=data.get("morse_words", 0),
-            braille_words=data.get("braille_words", 0),
-            semaphore_words=data.get("semaphore_words", 0),
-            a1z26_words=data.get("a1z26_words", 0),
-        )
-
 
 @dataclass
 class Progress:
-    """Overall progress tracking.
+    """Overall progress tracking via a list of runs.
 
     Attributes:
-        daily: Dictionary mapping date strings to daily progress.
+        runs: List of all recorded game runs.
     """
 
-    daily: dict[str, DailyProgress] = field(default_factory=dict)
+    runs: list[Run] = field(default_factory=list)
 
     def get_today(self) -> DailyProgress:
-        """Get today's progress.
+        """Get today's aggregated progress from runs.
 
         Returns:
-            DailyProgress for today, creating if needed.
+            DailyProgress computed from today's runs.
         """
-        today = date.today().isoformat()
-        if today not in self.daily:
-            self.daily[today] = DailyProgress()
-        return self.daily[today]
+        today_str = date.today().isoformat()
+        today_runs = [r for r in self.runs if r.date_str == today_str]
+        return DailyProgress(
+            morse_words=sum(r.num_words for r in today_runs if r.mode == "morse"),
+            braille_words=sum(r.num_words for r in today_runs if r.mode == "braille"),
+            semaphore_words=sum(
+                r.num_words for r in today_runs if r.mode == "semaphore"
+            ),
+            a1z26_words=sum(r.num_words for r in today_runs if r.mode == "a1z26"),
+        )
 
     def get_alltime_total(self) -> int:
-        """Get total words answered across all days.
+        """Get total words answered across all runs.
 
         Returns:
-            Sum of all words across all days.
+            Sum of all words across all runs.
         """
-        return sum(day.total_words for day in self.daily.values())
+        return sum(r.num_words for r in self.runs)
 
     def get_alltime_by_mode(self) -> DailyProgress:
         """Get all-time totals broken down by mode.
 
         Returns:
-            DailyProgress with summed values across all days.
+            DailyProgress with summed values across all runs.
         """
         return DailyProgress(
-            morse_words=sum(day.morse_words for day in self.daily.values()),
-            braille_words=sum(day.braille_words for day in self.daily.values()),
-            semaphore_words=sum(day.semaphore_words for day in self.daily.values()),
-            a1z26_words=sum(day.a1z26_words for day in self.daily.values()),
+            morse_words=sum(r.num_words for r in self.runs if r.mode == "morse"),
+            braille_words=sum(r.num_words for r in self.runs if r.mode == "braille"),
+            semaphore_words=sum(
+                r.num_words for r in self.runs if r.mode == "semaphore"
+            ),
+            a1z26_words=sum(r.num_words for r in self.runs if r.mode == "a1z26"),
         )
 
-    def add_word(self, mode: str) -> None:
-        """Add a completed word for today.
+    def get_last_completed_run(self, mode: str) -> Run | None:
+        """Get the most recent completed run for a given mode.
 
         Args:
             mode: The game mode ('morse', 'braille', 'semaphore', or 'a1z26').
-        """
-        today = self.get_today()
-        if mode == "morse":
-            today.morse_words += 1
-        elif mode == "braille":
-            today.braille_words += 1
-        elif mode == "semaphore":
-            today.semaphore_words += 1
-        elif mode == "a1z26":
-            today.a1z26_words += 1
 
-    def to_dict(self) -> dict[str, dict[str, dict[str, int]]]:
+        Returns:
+            The most recent completed Run, or None if none exist.
+        """
+        completed = [r for r in self.runs if r.mode == mode and r.completed]
+        return completed[-1] if completed else None
+
+    def add_run(self, run: Run) -> None:
+        """Add a run to the progress, ignoring runs with 0 words.
+
+        Args:
+            run: The Run to add.
+        """
+        if run.num_words > 0:
+            self.runs.append(run)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary.
 
         Returns:
             Dictionary representation.
         """
-        return {"daily": {k: v.to_dict() for k, v in self.daily.items()}}
+        return {"runs": [r.to_dict() for r in self.runs]}
 
     @classmethod
-    def from_dict(cls, data: dict[str, dict[str, dict[str, int]]]) -> Progress:
+    def from_dict(cls, data: Mapping[str, Any]) -> Progress:
         """Create from dictionary.
 
         Args:
@@ -145,9 +227,16 @@ class Progress:
         Returns:
             Progress instance.
         """
-        daily_data = data.get("daily", {})
-        daily = {k: DailyProgress.from_dict(v) for k, v in daily_data.items()}
-        return cls(daily=daily)
+        runs_data = data.get("runs", [])
+        if not isinstance(runs_data, list):
+            runs_data = []
+        runs = []
+        for r in runs_data:
+            try:
+                runs.append(Run.from_dict(r))
+            except (KeyError, ValueError, TypeError):
+                pass  # Skip invalid run data
+        return cls(runs=runs)
 
 
 def load_progress(progress_path: Path | str) -> Progress:

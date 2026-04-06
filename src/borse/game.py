@@ -3,13 +3,14 @@
 import contextlib
 import curses
 from collections.abc import Callable
+from datetime import datetime
 from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
 from borse.__about__ import __version__
 from borse.config import MORSE_DISPLAY_MODES, load_config, save_config
 from borse.morse_audio import MorsePlayer
-from borse.progress import load_progress, save_progress
+from borse.progress import Run, format_duration, load_progress, save_progress
 from borse.words import get_random_word_or_letter
 
 
@@ -67,6 +68,7 @@ class Game:
         self.config = load_config()
         self.progress = load_progress(self.config.progress_file)
         self.morse_player = MorsePlayer()
+        self.session_start_time = datetime.now().isoformat()
 
         # Setup curses
         curses.curs_set(1)  # Show cursor
@@ -79,9 +81,10 @@ class Game:
         # Initialize color pairs if available
         if curses.has_colors():
             curses.start_color()
-            curses.init_pair(1, curses.COLOR_GREEN, -1)  # Correct
+            curses.init_pair(1, curses.COLOR_GREEN, -1)  # Correct / current session
             curses.init_pair(2, curses.COLOR_YELLOW, -1)  # Title
             curses.init_pair(3, curses.COLOR_CYAN, -1)  # Info
+            curses.init_pair(4, curses.COLOR_WHITE, -1)  # Gray (previous session)
 
     def draw_title(self, title: str) -> int:
         """Draw a title at the top of the screen (left-aligned).
@@ -177,6 +180,30 @@ class Game:
                     self.stdscr.addstr(row + i, 4, f"  {item}  ")
                     if i == selected:
                         self.stdscr.attroff(curses.A_REVERSE)
+
+                    # Show last completed run time for game modes
+                    if i < len(modes):
+                        mode = modes[i]
+                        last_run = self.progress.get_last_completed_run(mode.value)
+                        if last_run is not None:
+                            run_label = f"Last run: {last_run.format_duration()}"
+                            x_pos = 4 + len(f"  {item}  ") + 2
+                            is_current = last_run.start_time >= self.session_start_time
+                            if curses.has_colors():
+                                if is_current:
+                                    self.stdscr.attron(curses.color_pair(1))
+                                else:
+                                    self.stdscr.attron(
+                                        curses.color_pair(4) | curses.A_DIM
+                                    )
+                            self.stdscr.addstr(row + i, x_pos, run_label)
+                            if curses.has_colors():
+                                if is_current:
+                                    self.stdscr.attroff(curses.color_pair(1))
+                                else:
+                                    self.stdscr.attroff(
+                                        curses.color_pair(4) | curses.A_DIM
+                                    )
                 except curses.error:
                     pass
 
@@ -225,145 +252,184 @@ class Game:
         words_completed = 0
         total_words = self.config.words_per_game
         completed_words: list[str] = []  # Track completed words
+        start_time = datetime.now()
 
-        while words_completed < total_words:
-            extra_glyphs = None
-            if mode == GameMode.BRAILLE and self.config.braille_grade == 2:
-                extra_glyphs = list(braille.GRADE2_GROUP_CONTRACTIONS) + list(
-                    braille.GRADE2_WORD_CONTRACTIONS
+        # Non-blocking getch so the timer can refresh each second
+        self.stdscr.timeout(1000)
+
+        try:
+            while words_completed < total_words:
+                extra_glyphs = None
+                if mode == GameMode.BRAILLE and self.config.braille_grade == 2:
+                    extra_glyphs = list(braille.GRADE2_GROUP_CONTRACTIONS) + list(
+                        braille.GRADE2_WORD_CONTRACTIONS
+                    )
+                word = get_random_word_or_letter(
+                    self.config.single_letter_probability, extra_glyphs
                 )
-            word = get_random_word_or_letter(
-                self.config.single_letter_probability, extra_glyphs
-            )
-            user_input = ""
-            morse_mode = self.config.morse_display_mode
-            play_audio = mode == GameMode.MORSE and morse_mode in ("audio", "both")
-            show_visual = mode != GameMode.MORSE or morse_mode in ("visual", "both")
+                user_input = ""
+                morse_mode = self.config.morse_display_mode
+                play_audio = mode == GameMode.MORSE and morse_mode in ("audio", "both")
+                show_visual = mode != GameMode.MORSE or morse_mode in ("visual", "both")
 
-            # Play audio once when the new word starts
-            if play_audio:
-                self.morse_player.play(word, self.config.morse_volume)
+                # Play audio once when the new word starts
+                if play_audio:
+                    self.morse_player.play(word, self.config.morse_volume)
 
-            while True:
-                row = self.draw_title(
-                    f"{mode_name} - Word {words_completed + 1}/{total_words}"
-                )
-                height, _width = self.stdscr.getmaxyx()
+                while True:
+                    elapsed = (datetime.now() - start_time).total_seconds()
+                    timer_str = format_duration(elapsed)
+                    row = self.draw_title(
+                        f"{mode_name} - Word {words_completed + 1}/{total_words}"
+                        f"    {timer_str}"
+                    )
+                    height, _width = self.stdscr.getmaxyx()
 
-                # Display the encoded word (or audio-only placeholder)
-                if show_visual:
-                    if mode == GameMode.BRAILLE:
-                        display_lines = braille.get_display_lines(
-                            word, self.config.braille_grade
-                        )
+                    # Display the encoded word (or audio-only placeholder)
+                    if show_visual:
+                        if mode == GameMode.BRAILLE:
+                            display_lines = braille.get_display_lines(
+                                word, self.config.braille_grade
+                            )
+                        else:
+                            display_lines = display_func(word)
+                        for i, line in enumerate(display_lines):
+                            with contextlib.suppress(curses.error):
+                                self.stdscr.addstr(row + i, 4, line)
+                        row += len(display_lines) + 2
                     else:
-                        display_lines = display_func(word)
-                    for i, line in enumerate(display_lines):
                         with contextlib.suppress(curses.error):
-                            self.stdscr.addstr(row + i, 4, line)
-                    row += len(display_lines) + 2
-                else:
-                    with contextlib.suppress(curses.error):
-                        self.stdscr.addstr(row, 4, "[audio only - press Tab to replay]")
-                    row += 3
+                            self.stdscr.addstr(
+                                row, 4, "[audio only - press Tab to replay]"
+                            )
+                        row += 3
 
-                # Input prompt - show user input in UPPERCASE
-                input_row = row
-                input_start = 17
-                try:
-                    self.stdscr.addstr(row, 2, "Type the word: ")
-                    display_input = user_input.upper()
-                    self.stdscr.addstr(row, input_start, display_input)
-
-                    # Show correct characters in green
-                    for i, char in enumerate(user_input):
-                        if i < len(word) and char.lower() == word[i].lower():
-                            if curses.has_colors():
-                                self.stdscr.attron(curses.color_pair(1))
-                            self.stdscr.addstr(row, input_start + i, char.upper())
-                            if curses.has_colors():
-                                self.stdscr.attroff(curses.color_pair(1))
-                except curses.error:
-                    pass
-
-                row += 2
-
-                # Instructions
-                with contextlib.suppress(curses.error):
-                    if play_audio:
-                        self.stdscr.addstr(
-                            row, 2, "Tab: replay audio  |  Esc: return to menu"
-                        )
-                    else:
-                        self.stdscr.addstr(row, 2, "Press Esc to return to menu")
-
-                row += 2
-
-                # Show completed words in green at the bottom
-                if completed_words:
+                    # Input prompt - show user input in UPPERCASE
+                    input_row = row
+                    input_start = 17
                     try:
-                        available_rows = height - row - 1
-                        if available_rows > 0:
-                            prefix = "Completed: "
-                            indent = len(prefix)  # 11
-                            col_start = 2
-                            line_width = _width - col_start - indent - 2
+                        self.stdscr.addstr(row, 2, "Type the word: ")
+                        display_input = user_input.upper()
+                        self.stdscr.addstr(row, input_start, display_input)
 
-                            # Wrap words into lines that fit
-                            lines: list[str] = []
-                            current_line = ""
-                            for cw in completed_words:
-                                cw_upper = cw.upper()
-                                entry = (", " + cw_upper) if current_line else cw_upper
-                                if (
-                                    current_line
-                                    and len(current_line) + len(entry) > line_width
-                                ):
-                                    lines.append(current_line)
-                                    current_line = cw_upper
-                                else:
-                                    current_line += entry
-                            if current_line:
-                                lines.append(current_line)
-
-                            if curses.has_colors():
-                                self.stdscr.attron(curses.color_pair(1))
-                            self.stdscr.addstr(row, col_start, prefix)
-                            for i, line in enumerate(lines[:available_rows]):
-                                self.stdscr.addstr(row + i, col_start + indent, line)
-                            if curses.has_colors():
-                                self.stdscr.attroff(curses.color_pair(1))
+                        # Show correct characters in green
+                        for i, char in enumerate(user_input):
+                            if i < len(word) and char.lower() == word[i].lower():
+                                if curses.has_colors():
+                                    self.stdscr.attron(curses.color_pair(1))
+                                self.stdscr.addstr(row, input_start + i, char.upper())
+                                if curses.has_colors():
+                                    self.stdscr.attroff(curses.color_pair(1))
                     except curses.error:
                         pass
 
-                # Position cursor at the typing location
-                with contextlib.suppress(curses.error):
-                    self.stdscr.move(input_row, input_start + len(user_input))
+                    row += 2
 
-                self.stdscr.refresh()
+                    # Instructions
+                    with contextlib.suppress(curses.error):
+                        if play_audio:
+                            self.stdscr.addstr(
+                                row, 2, "Tab: replay audio  |  Esc: return to menu"
+                            )
+                        else:
+                            self.stdscr.addstr(row, 2, "Press Esc to return to menu")
 
-                key = self.stdscr.getch()
+                    row += 2
 
-                if key == 27:  # Escape
-                    self.morse_player.stop()
-                    return
-                elif key == 9 and play_audio:  # Tab - replay audio
-                    self.morse_player.replay()
-                elif key in (curses.KEY_BACKSPACE, 127, 8):
-                    user_input = user_input[:-1]
-                elif 32 <= key <= 126:  # Printable characters
-                    user_input += chr(key)
+                    # Show completed words in green at the bottom
+                    if completed_words:
+                        try:
+                            available_rows = height - row - 1
+                            if available_rows > 0:
+                                prefix = "Completed: "
+                                indent = len(prefix)  # 11
+                                col_start = 2
+                                line_width = _width - col_start - indent - 2
 
-                    # Check if word matches
-                    if user_input.lower() == word.lower():
-                        words_completed += 1
-                        completed_words.append(word)
-                        self.progress.add_word(mode.value)
-                        save_progress(self.progress, self.config.progress_file)
-                        break
+                                # Wrap words into lines that fit
+                                lines: list[str] = []
+                                current_line = ""
+                                for cw in completed_words:
+                                    cw_upper = cw.upper()
+                                    entry = (
+                                        (", " + cw_upper) if current_line else cw_upper
+                                    )
+                                    if (
+                                        current_line
+                                        and len(current_line) + len(entry) > line_width
+                                    ):
+                                        lines.append(current_line)
+                                        current_line = cw_upper
+                                    else:
+                                        current_line += entry
+                                if current_line:
+                                    lines.append(current_line)
 
-        # Show completion message
-        self.show_completion(mode, words_completed, completed_words)
+                                if curses.has_colors():
+                                    self.stdscr.attron(curses.color_pair(1))
+                                self.stdscr.addstr(row, col_start, prefix)
+                                for i, line in enumerate(lines[:available_rows]):
+                                    self.stdscr.addstr(
+                                        row + i, col_start + indent, line
+                                    )
+                                if curses.has_colors():
+                                    self.stdscr.attroff(curses.color_pair(1))
+                        except curses.error:
+                            pass
+
+                    # Position cursor at the typing location
+                    with contextlib.suppress(curses.error):
+                        self.stdscr.move(input_row, input_start + len(user_input))
+
+                    self.stdscr.refresh()
+
+                    key = self.stdscr.getch()
+
+                    if key == -1:  # Timeout - redraw to update timer
+                        continue
+                    elif key == 27:  # Escape
+                        self.morse_player.stop()
+                        end_time = datetime.now()
+                        run = Run(
+                            mode=mode.value,
+                            start_time=start_time.isoformat(),
+                            end_time=end_time.isoformat(),
+                            num_words=words_completed,
+                            completed=False,
+                        )
+                        self.progress.add_run(run)
+                        if run.num_words > 0:
+                            save_progress(self.progress, self.config.progress_file)
+                        return
+                    elif key == 9 and play_audio:  # Tab - replay audio
+                        self.morse_player.replay()
+                    elif key in (curses.KEY_BACKSPACE, 127, 8):
+                        user_input = user_input[:-1]
+                    elif 32 <= key <= 126:  # Printable characters
+                        user_input += chr(key)
+
+                        # Check if word matches
+                        if user_input.lower() == word.lower():
+                            words_completed += 1
+                            completed_words.append(word)
+                            break
+        finally:
+            self.stdscr.timeout(-1)  # Restore blocking mode
+
+        # All words completed
+        end_time = datetime.now()
+        run = Run(
+            mode=mode.value,
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
+            num_words=words_completed,
+            completed=True,
+        )
+        self.progress.add_run(run)
+        save_progress(self.progress, self.config.progress_file)
+
+        duration = (end_time - start_time).total_seconds()
+        self.show_completion(mode, words_completed, completed_words, duration)
 
     def show_settings(self) -> None:
         """Show the settings menu for editing configuration."""
@@ -496,7 +562,11 @@ class Game:
                             edit_buffer = str(value)
 
     def show_completion(
-        self, mode: GameMode, words_completed: int, completed_words: list[str]
+        self,
+        mode: GameMode,
+        words_completed: int,
+        completed_words: list[str],
+        duration: float,
     ) -> None:
         """Show completion screen.
 
@@ -504,6 +574,7 @@ class Game:
             mode: The game mode that was played.
             words_completed: Number of words completed.
             completed_words: List of completed words.
+            duration: Total run duration in seconds.
         """
         row = self.draw_title("Session Complete!")
         height, width = self.stdscr.getmaxyx()
@@ -516,6 +587,9 @@ class Game:
             )
             if curses.has_colors():
                 self.stdscr.attroff(curses.color_pair(1))
+
+            row += 1
+            self.stdscr.addstr(row, 2, f"Total time: {format_duration(duration)}")
 
             row += 2
             today = self.progress.get_today()
