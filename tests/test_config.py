@@ -12,7 +12,7 @@ class TestConfig:
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = Config()
-        assert config.words_per_game == 10
+        assert config.words_per_game == 15
         assert config.single_letter_probability == 0.3
         assert "progress.json" in config.progress_file
 
@@ -43,7 +43,7 @@ class TestConfig:
     def test_from_dict_with_missing_values(self) -> None:
         """Test creating config with missing values uses defaults."""
         config = Config.from_dict({})
-        assert config.words_per_game == 10
+        assert config.words_per_game == 15
         assert config.single_letter_probability == 0.3
 
     def test_morse_display_mode_default(self) -> None:
@@ -95,7 +95,7 @@ class TestLoadSaveConfig:
     def test_load_nonexistent_file(self) -> None:
         """Test loading from nonexistent file returns defaults."""
         config = load_config(Path("/nonexistent/config.toml"))
-        assert config.words_per_game == 10
+        assert config.words_per_game == 15
 
     def test_save_and_load(self) -> None:
         """Test saving and loading config."""
@@ -116,4 +116,4 @@ class TestLoadSaveConfig:
             config_path.write_text("not valid toml [[[")
 
             config = load_config(config_path)
-            assert config.words_per_game == 10
+            assert config.words_per_game == 15

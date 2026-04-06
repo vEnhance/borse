@@ -38,7 +38,7 @@ uv run pytest              # Run all tests
 User config stored in `~/.config/borse/config.toml`:
 
 - `progress_file`: Path to progress JSON file
-- `words_per_game`: Number of words per session (default: 10)
+- `words_per_game`: Number of words per session (default: 15)
 
 ## Adding New Features
 

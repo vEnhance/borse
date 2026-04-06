@@ -20,7 +20,7 @@ Configuration is stored in `~/.config/borse/config.toml` by default, e.g.
 
 ```toml
 progress_file = "/home/evan/.config/borse/progress.json"
-words_per_game = 10
+words_per_game = 15
 single_letter_probability = 0.3
 ```
 

@@ -68,7 +68,7 @@ class Config:
     """
 
     progress_file: str = field(default_factory=lambda: str(get_default_progress_path()))
-    words_per_game: int = 10
+    words_per_game: int = 15
     single_letter_probability: float = 0.3
     morse_display_mode: str = "both"
     morse_volume: float = 1.0
@@ -109,7 +109,7 @@ class Config:
             progress_file=str(
                 data.get("progress_file", str(get_default_progress_path()))
             ),
-            words_per_game=int(data.get("words_per_game", 10)),
+            words_per_game=int(data.get("words_per_game", 15)),
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),
             morse_display_mode=morse_display_mode,
             morse_volume=morse_volume,
