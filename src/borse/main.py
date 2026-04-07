@@ -44,6 +44,18 @@ def main() -> int:
             )
         return 0
 
+    from borse.config import load_config
+    from borse.migrate import is_old_format
+
+    config = load_config()
+    if is_old_format(config.progress_file):
+        print(
+            f"Error: {config.progress_file} uses the old progress format.",
+            file=sys.stderr,
+        )
+        print("Please run:  borse --migrate", file=sys.stderr)
+        return 1
+
     try:
         curses.wrapper(run_game)
         return 0

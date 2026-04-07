@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from borse.main import main
-from borse.migrate import migrate_progress
+from borse.migrate import is_old_format, migrate_progress
 from borse.progress import load_progress
 
 OLD_FORMAT = {
@@ -141,6 +141,22 @@ class TestMigrateProgress:
             assert progress.runs[0].mode == "morse"
             assert progress.runs[0].num_words == 5
 
+    def test_backup_created(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, OLD_FORMAT)
+            migrate_progress(p)
+            bak = p.with_suffix(".bak")
+            assert bak.exists()
+            assert json.loads(bak.read_text()) == OLD_FORMAT
+
+    def test_backup_not_created_when_no_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, {"runs": []})
+            migrate_progress(p)
+            assert not p.with_suffix(".bak").exists()
+
     def test_runs_sorted_by_date(self) -> None:
         data = {
             "daily": {
@@ -156,6 +172,37 @@ class TestMigrateProgress:
             progress = load_progress(p)
             dates = [r.date_str for r in progress.runs]
             assert dates == sorted(dates)
+
+
+class TestIsOldFormat:
+    """Tests for the is_old_format detection function."""
+
+    def test_old_format_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, OLD_FORMAT)
+            assert is_old_format(p) is True
+
+    def test_new_format_not_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, {"runs": []})
+            assert is_old_format(p) is False
+
+    def test_missing_file_not_detected(self) -> None:
+        assert is_old_format("/nonexistent/progress.json") is False
+
+    def test_invalid_json_not_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            p.write_text("not json")
+            assert is_old_format(p) is False
+
+    def test_unrecognised_format_not_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, {"something_else": {}})
+            assert is_old_format(p) is False
 
 
 class TestMigrateCLI:
@@ -178,6 +225,24 @@ class TestMigrateCLI:
         assert code == 0
         captured = capsys.readouterr()
         assert "migrated" in captured.out.lower()
+
+    def test_old_format_blocks_game_start(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "progress.json"
+            write_json(p, OLD_FORMAT)
+            from borse.config import Config
+
+            fake_config = Config(progress_file=str(p))
+            with (
+                patch("sys.argv", ["borse"]),
+                patch("borse.config.load_config", return_value=fake_config),
+            ):
+                code = main()
+        assert code == 1
+        captured = capsys.readouterr()
+        assert "borse --migrate" in captured.err
 
     def test_migrate_flag_already_new_format(
         self, capsys: pytest.CaptureFixture[str]

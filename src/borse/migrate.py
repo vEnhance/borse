@@ -35,6 +35,7 @@ New format::
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from borse.progress import Progress, Run, save_progress
@@ -48,12 +49,33 @@ _MODE_KEYS: list[tuple[str, str]] = [
 ]
 
 
+def is_old_format(progress_path: Path | str) -> bool:
+    """Return True if the progress file exists and uses the old daily-based format.
+
+    Args:
+        progress_path: Path to the progress JSON file.
+
+    Returns:
+        True if the file contains a top-level ``"daily"`` key (old format).
+    """
+    path = Path(progress_path)
+    if not path.exists():
+        return False
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        return "daily" in data and "runs" not in data
+    except (json.JSONDecodeError, OSError):
+        return False
+
+
 def migrate_progress(progress_path: Path | str) -> bool:
     """Migrate old progress.json to the new run-based format in place.
 
-    Reads the file, converts each day's per-mode word counts into individual
-    completed ``Run`` entries (start and end time both set to midnight UTC on
-    that day), and overwrites the file.  Runs with 0 words are omitted.
+    Writes a backup to ``<progress_path>.bak`` before overwriting the file.
+    Converts each day's per-mode word counts into individual completed ``Run``
+    entries (start and end time both set to midnight UTC on that day).
+    Runs with 0 words are omitted.
 
     Args:
         progress_path: Path to the progress JSON file.
@@ -79,6 +101,9 @@ def migrate_progress(progress_path: Path | str) -> bool:
 
     if "daily" not in data:
         return False
+
+    # Back up the original file before touching it
+    shutil.copy2(path, path.with_suffix(".bak"))
 
     runs: list[Run] = []
     for date_str, day_data in sorted(data["daily"].items()):
