@@ -3,7 +3,7 @@
 import contextlib
 import curses
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import Enum
 
 from borse import a1z26, braille, morse, semaphore
@@ -190,10 +190,21 @@ class Game:
                         mode = modes[i]
                         last_run = self.progress.get_last_completed_run(mode.value)
                         if last_run is not None:
-                            run_label = f"Last run: {last_run.format_duration()}"
-                            is_current = last_run.start_time >= self.session_start_time
+                            today_str = date.today().isoformat()
+                            run_date_str = last_run.date_str
+                            is_today = run_date_str == today_str
+                            if is_today:
+                                age_label = "(today)"
+                            else:
+                                days_ago = (
+                                    date.today() - date.fromisoformat(run_date_str)
+                                ).days
+                                age_label = f"({days_ago} days ago)"
+                            run_label = (
+                                f"Last run: {last_run.format_duration()} {age_label}"
+                            )
                             if curses.has_colors():
-                                if is_current:
+                                if is_today:
                                     self.stdscr.attron(curses.color_pair(1))
                                 else:
                                     self.stdscr.attron(
@@ -201,7 +212,7 @@ class Game:
                                     )
                             self.stdscr.addstr(row + i, last_run_col, run_label)
                             if curses.has_colors():
-                                if is_current:
+                                if is_today:
                                     self.stdscr.attroff(curses.color_pair(1))
                                 else:
                                     self.stdscr.attroff(
@@ -210,9 +221,30 @@ class Game:
                 except curses.error:
                     pass
 
+            # Total time today (sum of all completed runs for today)
+            today_str = date.today().isoformat()
+            today_secs = sum(
+                r.duration_seconds()
+                for r in self.progress.runs
+                if r.completed and r.date_str == today_str
+            )
+            total_label = f"Total time today: {format_duration(today_secs)}"
+            with contextlib.suppress(curses.error):
+                if curses.has_colors():
+                    if today_secs > 0:
+                        self.stdscr.attron(curses.color_pair(1))
+                    else:
+                        self.stdscr.attron(curses.color_pair(4) | curses.A_DIM)
+                self.stdscr.addstr(row + len(menu_items) + 1, 4, total_label)
+                if curses.has_colors():
+                    if today_secs > 0:
+                        self.stdscr.attroff(curses.color_pair(1))
+                    else:
+                        self.stdscr.attroff(curses.color_pair(4) | curses.A_DIM)
+
             # Navigation hints
             with contextlib.suppress(curses.error):
-                hint_row = min(row + len(menu_items) + 2, height - 2)
+                hint_row = min(row + len(menu_items) + 3, height - 2)
                 self.stdscr.addstr(
                     hint_row, 2, "Use arrows + Enter, or press shortcut key."
                 )
