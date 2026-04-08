@@ -7,7 +7,7 @@ from datetime import date
 from borse.__about__ import __version__
 from borse.config import Config
 from borse.modes import MODE_SHORTCUTS, GameMode, SettingsMode
-from borse.progress import Progress, format_duration
+from borse.progress import DailyProgress, Progress, format_duration
 
 
 def draw_title(stdscr: curses.window, title: str) -> int:
@@ -85,12 +85,12 @@ def show_menu(
             f"{h:>{w}}" for (h, _), w in zip(mode_cols, col_widths)
         )
 
-        def make_row(label: str, stats: object) -> str:
+        def make_row(label: str, stats: DailyProgress) -> str:
             cols = col_sep.join(
                 f"{getattr(stats, attr):{w}d}"
                 for (_, attr), w in zip(mode_cols, col_widths)
             )
-            return f"{label:<{label_w}} {stats.total_words:{total_w}d}{bar}{cols}"  # type: ignore[attr-defined]
+            return f"{label:<{label_w}} {stats.total_words:{total_w}d}{bar}{cols}"
 
         try:
             if curses.has_colors():
