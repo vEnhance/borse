@@ -334,6 +334,10 @@ class Game:
                                 display_lines = braille.get_display_lines(
                                     word, self.config.braille_grade
                                 )
+                            elif mode == GameMode.SEMAPHORE:
+                                display_lines = semaphore.get_display_lines(
+                                    word, self.config.semaphore_compact
+                                )
                             else:
                                 display_lines = display_func(word)
                             for i, line in enumerate(display_lines):

@@ -73,6 +73,7 @@ class Config:
     morse_display_mode: str = "both"
     morse_volume: float = 1.0
     braille_grade: int = 1
+    semaphore_compact: bool = False
 
     def to_dict(self) -> dict[str, str | int | float]:
         """Convert config to dictionary.
@@ -87,6 +88,7 @@ class Config:
             "morse_display_mode": self.morse_display_mode,
             "morse_volume": self.morse_volume,
             "braille_grade": self.braille_grade,
+            "semaphore_compact": self.semaphore_compact,
         }
 
     @classmethod
@@ -114,6 +116,7 @@ class Config:
             morse_display_mode=morse_display_mode,
             morse_volume=morse_volume,
             braille_grade=braille_grade,
+            semaphore_compact=bool(data.get("semaphore_compact", False)),
         )
 
 

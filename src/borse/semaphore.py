@@ -132,11 +132,25 @@ def encode_word(word: str) -> list[list[str]]:
     return [encode_char(c) for c in word if c.upper() in SEMAPHORE_POSITIONS]
 
 
-def get_display_lines(word: str) -> list[str]:
+def _trim_char(rows: list[str]) -> list[str]:
+    """Trim a 7-wide character to its used column range."""
+    min_col = min(
+        (col for row in rows for col, ch in enumerate(row) if ch != " "),
+        default=0,
+    )
+    max_col = max(
+        (col for row in rows for col, ch in enumerate(row) if ch != " "),
+        default=6,
+    )
+    return [row[min_col : max_col + 1] for row in rows]
+
+
+def get_display_lines(word: str, compact: bool = False) -> list[str]:
     """Get the display lines for a word in semaphore.
 
     Args:
         word: The word to encode.
+        compact: If True, trim unused horizontal space from each glyph.
 
     Returns:
         A list of 5 strings, one for each row, with characters separated by spaces.
@@ -145,10 +159,9 @@ def get_display_lines(word: str) -> list[str]:
     if not chars:
         return ["", "", "", "", ""]
 
-    # Combine all characters horizontally with space between
-    lines = []
-    for row in range(5):
-        line = "  ".join(char[row] for char in chars)
-        lines.append(line)
+    if compact:
+        chars = [_trim_char(c) for c in chars]
 
+    sep = " " if compact else "  "
+    lines = [sep.join(char[row] for char in chars) for row in range(5)]
     return lines

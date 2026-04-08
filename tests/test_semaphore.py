@@ -76,6 +76,15 @@ class TestGetDisplayLines:
         for line in lines:
             assert "  " in line  # Two spaces between characters
 
+    def test_compact_trims_glyphs(self) -> None:
+        """Test that compact mode trims unused columns."""
+        normal = get_display_lines("IX")
+        compact = get_display_lines("IX", compact=True)
+        # Compact should be narrower
+        assert max(len(letter) for letter in compact) < max(
+            len(letter) for letter in normal
+        )
+
     def test_empty_word(self) -> None:
         """Test empty word returns empty lines."""
         lines = get_display_lines("")
