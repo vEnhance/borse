@@ -15,21 +15,23 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.14"
       - name: Install Hatch
         run: pipx install hatch
-      - uses: actions/cache@v5
+      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: ~/.cache/hatch
           key: ${{ runner.os }}-hatch
           restore-keys: ${{ runner.os }}-hatch
+          lookup-only: true
       - name: Build package
         run: hatch build
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
