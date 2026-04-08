@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from borse import braille, semaphore
 from borse.config import load_config
-from borse.dialogs import confirm_abort
+from borse.dialogs import confirm_abort, show_completion
 from borse.menu import draw_title, show_menu
 from borse.modes import MODE_DISPLAY_FUNCS, MODE_NAMES, GameMode, SettingsMode
 from borse.morse_audio import MorsePlayer
@@ -262,67 +262,14 @@ class Game:
         save_progress(self.progress, self.config.progress_file)
 
         duration = (end_time - start_time).total_seconds()
-        self.show_completion(mode, words_completed, completed_words, duration)
-
-    def show_completion(
-        self,
-        mode: GameMode,
-        words_completed: int,
-        completed_words: list[str],
-        duration: float,
-    ) -> None:
-        """Show completion screen.
-
-        Args:
-            mode: The game mode that was played.
-            words_completed: Number of words completed.
-            completed_words: List of completed words.
-            duration: Total run duration in seconds.
-        """
-        row = draw_title(self.stdscr, "Session Complete!")
-        height, width = self.stdscr.getmaxyx()
-
-        try:
-            if curses.has_colors():
-                self.stdscr.attron(curses.color_pair(1))
-            self.stdscr.addstr(
-                row, 2, f"You completed {words_completed} {MODE_NAMES[mode]} words!"
-            )
-            if curses.has_colors():
-                self.stdscr.attroff(curses.color_pair(1))
-
-            row += 1
-            self.stdscr.addstr(row, 2, f"Total time: {format_duration(duration)}")
-
-            row += 2
-            today = self.progress.get_today()
-            self.stdscr.addstr(row, 2, f"Today's total: {today.total_words} words")
-
-            row += 2
-
-            # Show all completed words
-            if completed_words:
-                self.stdscr.addstr(row, 2, "Words completed:")
-                row += 1
-                if curses.has_colors():
-                    self.stdscr.attron(curses.color_pair(1))
-                words_str = ", ".join(w.upper() for w in completed_words)
-                # Wrap if needed
-                max_width = width - 4
-                for i in range(0, len(words_str), max_width):
-                    if row < height - 3:
-                        self.stdscr.addstr(row, 2, words_str[i : i + max_width])
-                        row += 1
-                if curses.has_colors():
-                    self.stdscr.attroff(curses.color_pair(1))
-
-            row = max(row + 1, height - 3)
-            self.stdscr.addstr(min(row, height - 2), 2, "Press any key to continue...")
-        except curses.error:
-            pass
-
-        self.stdscr.refresh()
-        self.stdscr.getch()
+        show_completion(
+            self.stdscr,
+            MODE_NAMES[mode],
+            words_completed,
+            completed_words,
+            duration,
+            self.progress.get_today().total_words,
+        )
 
     def run(self) -> None:
         """Run the main game loop."""
