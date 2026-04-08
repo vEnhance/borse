@@ -66,36 +66,40 @@ def show_menu(
         row += 2
         height, _ = stdscr.getmaxyx()
 
-        # Show today's progress and all-time total
+        # Show today's progress and all-time total as a 2×4 table
         today = progress.get_today()
         alltime = progress.get_alltime_by_mode()
-        SEP = " " * 4
-        progress_text = SEP.join(
-            (
-                f"Today:    {today.total_words:6d} words",
-                "|",
-                f"B:{today.braille_words:4d}",
-                f"M:{today.morse_words:4d}",
-                f"S:{today.semaphore_words:4d}",
-                f"A:{today.a1z26_words:4d}",
-            )
+        mode_cols = [
+            ("Braille", "braille_words"),
+            ("Morse", "morse_words"),
+            ("Semph", "semaphore_words"),
+            ("A1Z26", "a1z26_words"),
+        ]
+        col_widths = [max(len(h), 4) for h, _ in mode_cols]
+        col_sep = "  "
+        label_w = 9  # len("All-time:")
+        total_w = 5
+        bar = " | "
+        header_indent = " " * (label_w + 1 + total_w + len(bar))
+        header_line = header_indent + col_sep.join(
+            f"{h:>{w}}" for (h, _), w in zip(mode_cols, col_widths)
         )
-        alltime_text = SEP.join(
-            (
-                f"All-time: {alltime.total_words:6d} words",
-                "|",
-                f"B:{alltime.braille_words:4d}",
-                f"M:{alltime.morse_words:4d}",
-                f"S:{alltime.semaphore_words:4d}",
-                f"A:{alltime.a1z26_words:4d}",
+
+        def make_row(label: str, stats: object) -> str:
+            cols = col_sep.join(
+                f"{getattr(stats, attr):{w}d}"
+                for (_, attr), w in zip(mode_cols, col_widths)
             )
-        )
+            return f"{label:<{label_w}} {stats.total_words:{total_w}d}{bar}{cols}"  # type: ignore[attr-defined]
+
         try:
             if curses.has_colors():
                 stdscr.attron(curses.color_pair(3))
-            stdscr.addstr(row, 2, progress_text)
+            stdscr.addstr(row, 2, header_line)
             row += 1
-            stdscr.addstr(row, 2, alltime_text)
+            stdscr.addstr(row, 2, make_row("Today:", today))
+            row += 1
+            stdscr.addstr(row, 2, make_row("All-time:", alltime))
             if curses.has_colors():
                 stdscr.attroff(curses.color_pair(3))
         except curses.error:
