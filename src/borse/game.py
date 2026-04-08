@@ -85,6 +85,7 @@ class Game:
             curses.init_pair(2, curses.COLOR_YELLOW, -1)  # Title
             curses.init_pair(3, curses.COLOR_CYAN, -1)  # Info
             curses.init_pair(4, curses.COLOR_WHITE, -1)  # Gray (previous session)
+            curses.init_pair(5, curses.COLOR_RED, -1)  # Abort dialog border
 
     def draw_title(self, title: str) -> int:
         """Draw a title at the top of the screen (left-aligned).
@@ -285,27 +286,57 @@ class Game:
         options = ["Continue run", "Abort run"]
         selected = 1  # Default: Abort run
 
+        inner_w = 36
+        box_w = inner_w + 2
+        box_h = 7
+
         self.stdscr.timeout(-1)  # Blocking — no need for timer ticks here
+        curses.curs_set(0)  # Hide cursor during dialog
         try:
             while True:
                 height, width = self.stdscr.getmaxyx()
-                mid_row = height // 2
-                mid_col = width // 2
+                box_top = height // 2 - 3
+                box_left = width // 2 - 19
+
+                border_attr = curses.A_BOLD
+                if curses.has_colors():
+                    border_attr |= curses.color_pair(5)
 
                 with contextlib.suppress(curses.error):
-                    question = "Abort this run?"
+                    # Erase underlying content
+                    for r in range(box_h):
+                        self.stdscr.addstr(box_top + r, box_left, " " * box_w)
+
+                    # Border
                     self.stdscr.addstr(
-                        mid_row - 2, mid_col - len(question) // 2, question
+                        box_top, box_left, "╔" + "═" * inner_w + "╗", border_attr
+                    )
+                    for r in range(1, box_h - 1):
+                        self.stdscr.addstr(box_top + r, box_left, "║", border_attr)
+                        self.stdscr.addstr(
+                            box_top + r, box_left + box_w - 1, "║", border_attr
+                        )
+                    self.stdscr.addstr(
+                        box_top + box_h - 1,
+                        box_left,
+                        "╚" + "═" * inner_w + "╝",
+                        border_attr,
                     )
 
+                    # Question centered in box
+                    question = "Abort this run?"
+                    self.stdscr.addstr(
+                        box_top + 2,
+                        box_left + (box_w - len(question)) // 2,
+                        question,
+                    )
+
+                    # Buttons
                     for i, label in enumerate(options):
                         btn = f"[ {label} ]"
-                        col = mid_col - 16 + i * 20
-                        if i == selected:
-                            self.stdscr.attron(curses.A_REVERSE)
-                        self.stdscr.addstr(mid_row, col, btn)
-                        if i == selected:
-                            self.stdscr.attroff(curses.A_REVERSE)
+                        btn_col = box_left + 4 + i * 18
+                        attr = curses.A_REVERSE if i == selected else curses.A_NORMAL
+                        self.stdscr.addstr(box_top + 4, btn_col, btn, attr)
 
                 self.stdscr.refresh()
                 key = self.stdscr.getch()
@@ -317,6 +348,7 @@ class Game:
                 elif key == 27:  # Escape = stay
                     return False
         finally:
+            curses.curs_set(1)  # Restore cursor
             self.stdscr.timeout(100)  # Restore game tick rate
 
     def play_game(self, mode: GameMode) -> None:
