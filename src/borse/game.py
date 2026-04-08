@@ -2,57 +2,17 @@
 
 import contextlib
 import curses
-from collections.abc import Callable
-from datetime import date, datetime, timezone
-from enum import Enum
+from datetime import datetime, timezone
 
-from borse import a1z26, braille, morse, semaphore
-from borse.__about__ import __version__
-from borse.config import MORSE_DISPLAY_MODES, load_config, save_config
+from borse import braille, semaphore
+from borse.config import load_config
+from borse.dialogs import confirm_abort
+from borse.menu import draw_title, show_menu
+from borse.modes import MODE_DISPLAY_FUNCS, MODE_NAMES, GameMode, SettingsMode
 from borse.morse_audio import MorsePlayer
 from borse.progress import Run, format_duration, load_progress, save_progress
+from borse.settings_ui import show_settings
 from borse.words import get_random_word_or_letter
-
-
-class GameMode(Enum):
-    """Game mode enumeration."""
-
-    BRAILLE = "braille"
-    MORSE = "morse"
-    SEMAPHORE = "semaphore"
-    A1Z26 = "a1z26"
-
-
-class SettingsMode(Enum):
-    SETTINGS = "settings"
-
-
-# Map modes to their display functions
-MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
-    GameMode.BRAILLE: braille.get_display_lines,
-    GameMode.MORSE: morse.get_display_lines,
-    GameMode.SEMAPHORE: semaphore.get_display_lines,
-    GameMode.A1Z26: a1z26.get_display_lines,
-}
-
-MODE_NAMES: dict[GameMode, str] = {
-    GameMode.BRAILLE: "Braille",
-    GameMode.MORSE: "Morse Code",
-    GameMode.SEMAPHORE: "Semaphore",
-    GameMode.A1Z26: "A1Z26",
-}
-
-# Keyboard shortcuts for modes
-MODE_SHORTCUTS: dict[str, GameMode] = {
-    "b": GameMode.BRAILLE,
-    "B": GameMode.BRAILLE,
-    "m": GameMode.MORSE,
-    "M": GameMode.MORSE,
-    "s": GameMode.SEMAPHORE,
-    "S": GameMode.SEMAPHORE,
-    "a": GameMode.A1Z26,
-    "A": GameMode.A1Z26,
-}
 
 
 class Game:
@@ -86,270 +46,6 @@ class Game:
             curses.init_pair(3, curses.COLOR_CYAN, -1)  # Info
             curses.init_pair(4, curses.COLOR_WHITE, -1)  # Gray (previous session)
             curses.init_pair(5, curses.COLOR_RED, -1)  # Abort dialog border
-
-    def draw_title(self, title: str) -> int:
-        """Draw a title at the top of the screen (left-aligned).
-
-        Args:
-            title: The title text.
-
-        Returns:
-            The next available row.
-        """
-        self.stdscr.erase()
-        try:
-            if curses.has_colors():
-                self.stdscr.attron(curses.color_pair(2) | curses.A_BOLD)
-            self.stdscr.addstr(1, 2, title)
-            if curses.has_colors():
-                self.stdscr.attroff(curses.color_pair(2) | curses.A_BOLD)
-        except curses.error:
-            pass
-        return 3
-
-    def show_menu(self) -> GameMode | SettingsMode | None:
-        """Show the main menu and get mode selection.
-
-        Returns:
-            Selected GameMode, "settings" for settings menu, or None to quit.
-        """
-        selected = 0
-        modes = list(GameMode)
-        # Menu items with keyboard shortcuts shown
-        menu_items = [
-            "[B] Braille",
-            "[M] Morse Code",
-            "[S] Semaphore",
-            "[A] A1Z26",
-            "[O] Options",
-            "[Q] Quit",
-        ]
-        # Fixed column for "Last run" labels — aligned past the widest mode item
-        last_run_col = (
-            4 + max(len(f"  {item}  ") for item in menu_items[: len(modes)]) + 2
-        )
-
-        while True:
-            row = self.draw_title("BORSE - Braille mORse SEmaphore, by vEnhance")
-            self.stdscr.addstr(row, 2, f"Version {__version__}")
-            row += 2
-            height, _ = self.stdscr.getmaxyx()
-
-            # Show today's progress and all-time total
-            today = self.progress.get_today()
-            alltime = self.progress.get_alltime_by_mode()
-            SEP = " " * 4
-            progress_text = SEP.join(
-                (
-                    f"Today:    {today.total_words:6d} words",
-                    "|",
-                    f"B:{today.braille_words:4d}",
-                    f"M:{today.morse_words:4d}",
-                    f"S:{today.semaphore_words:4d}",
-                    f"A:{today.a1z26_words:4d}",
-                )
-            )
-            alltime_text = SEP.join(
-                (
-                    f"All-time: {alltime.total_words:6d} words",
-                    "|",
-                    f"B:{alltime.braille_words:4d}",
-                    f"M:{alltime.morse_words:4d}",
-                    f"S:{alltime.semaphore_words:4d}",
-                    f"A:{alltime.a1z26_words:4d}",
-                )
-            )
-            try:
-                if curses.has_colors():
-                    self.stdscr.attron(curses.color_pair(3))
-                self.stdscr.addstr(row, 2, progress_text)
-                row += 1
-                self.stdscr.addstr(row, 2, alltime_text)
-                if curses.has_colors():
-                    self.stdscr.attroff(curses.color_pair(3))
-            except curses.error:
-                pass
-
-            row += 2
-
-            # Instructions
-            with contextlib.suppress(curses.error):
-                self.stdscr.addstr(row, 2, "Select a mode to practice:")
-            row += 2
-
-            # Menu items
-            for i, item in enumerate(menu_items):
-                try:
-                    if i == selected:
-                        self.stdscr.attron(curses.A_REVERSE)
-                    self.stdscr.addstr(row + i, 4, f"  {item}  ")
-                    if i == selected:
-                        self.stdscr.attroff(curses.A_REVERSE)
-
-                    # Show last completed run time for game modes
-                    if i < len(modes):
-                        mode = modes[i]
-                        last_run = self.progress.get_last_completed_run(mode.value)
-                        if last_run is not None:
-                            today_str = date.today().isoformat()
-                            run_date_str = last_run.date_str
-                            is_today = run_date_str == today_str
-                            if is_today:
-                                age_label = "(today)"
-                            else:
-                                days_ago = (
-                                    date.today() - date.fromisoformat(run_date_str)
-                                ).days
-                                age_label = f"({days_ago} days ago)"
-                            run_label = (
-                                f"Last run: {last_run.format_duration()} {age_label}"
-                            )
-                            if curses.has_colors():
-                                if is_today:
-                                    self.stdscr.attron(curses.color_pair(1))
-                                else:
-                                    self.stdscr.attron(
-                                        curses.color_pair(4) | curses.A_DIM
-                                    )
-                            self.stdscr.addstr(row + i, last_run_col, run_label)
-                            if curses.has_colors():
-                                if is_today:
-                                    self.stdscr.attroff(curses.color_pair(1))
-                                else:
-                                    self.stdscr.attroff(
-                                        curses.color_pair(4) | curses.A_DIM
-                                    )
-                except curses.error:
-                    pass
-
-            # Total time today (sum of all completed runs for today)
-            today_str = date.today().isoformat()
-            today_secs = sum(
-                r.duration_seconds()
-                for r in self.progress.runs
-                if r.completed and r.date_str == today_str
-            )
-            total_label = f"Total time today: {format_duration(today_secs)}"
-            with contextlib.suppress(curses.error):
-                if curses.has_colors():
-                    if today_secs > 0:
-                        self.stdscr.attron(curses.color_pair(1))
-                    else:
-                        self.stdscr.attron(curses.color_pair(4) | curses.A_DIM)
-                self.stdscr.addstr(row + len(menu_items) + 1, 4, total_label)
-                if curses.has_colors():
-                    if today_secs > 0:
-                        self.stdscr.attroff(curses.color_pair(1))
-                    else:
-                        self.stdscr.attroff(curses.color_pair(4) | curses.A_DIM)
-
-            # Navigation hints
-            with contextlib.suppress(curses.error):
-                hint_row = min(row + len(menu_items) + 3, height - 2)
-                self.stdscr.addstr(
-                    hint_row, 2, "Use arrows + Enter, or press shortcut key."
-                )
-
-            self.stdscr.refresh()
-
-            key = self.stdscr.getch()
-
-            if key == curses.KEY_UP:
-                selected = (selected - 1) % len(menu_items)
-            elif key == curses.KEY_DOWN:
-                selected = (selected + 1) % len(menu_items)
-            elif key in (curses.KEY_ENTER, 10, 13):
-                if selected < len(modes):
-                    return modes[selected]
-                elif selected == len(modes):  # Settings
-                    return SettingsMode.SETTINGS
-                return None  # Quit
-            elif key == ord("q") or key == ord("Q"):
-                return None
-            elif key == ord("o") or key == ord("O"):
-                return SettingsMode.SETTINGS
-            else:
-                # Check for shortcut keys
-                try:
-                    char = chr(key)
-                    if char in MODE_SHORTCUTS:
-                        return MODE_SHORTCUTS[char]
-                except (ValueError, OverflowError):
-                    pass
-
-    def _confirm_abort(self) -> bool:
-        """Show an abort confirmation dialog over the current screen.
-
-        Returns:
-            True if the user chose to abort, False to continue.
-        """
-        options = ["Continue run", "Abort run"]
-        selected = 1  # Default: Abort run
-
-        inner_w = 36
-        box_w = inner_w + 2
-        box_h = 7
-
-        self.stdscr.timeout(-1)  # Blocking — no need for timer ticks here
-        curses.curs_set(0)  # Hide cursor during dialog
-        try:
-            while True:
-                height, width = self.stdscr.getmaxyx()
-                box_top = height // 2 - 3
-                box_left = width // 2 - 19
-
-                border_attr = curses.A_BOLD
-                if curses.has_colors():
-                    border_attr |= curses.color_pair(5)
-
-                with contextlib.suppress(curses.error):
-                    # Erase underlying content
-                    for r in range(box_h):
-                        self.stdscr.addstr(box_top + r, box_left, " " * box_w)
-
-                    # Border
-                    self.stdscr.addstr(
-                        box_top, box_left, "╔" + "═" * inner_w + "╗", border_attr
-                    )
-                    for r in range(1, box_h - 1):
-                        self.stdscr.addstr(box_top + r, box_left, "║", border_attr)
-                        self.stdscr.addstr(
-                            box_top + r, box_left + box_w - 1, "║", border_attr
-                        )
-                    self.stdscr.addstr(
-                        box_top + box_h - 1,
-                        box_left,
-                        "╚" + "═" * inner_w + "╝",
-                        border_attr,
-                    )
-
-                    # Question centered in box
-                    question = "Abort this run?"
-                    self.stdscr.addstr(
-                        box_top + 2,
-                        box_left + (box_w - len(question)) // 2,
-                        question,
-                    )
-
-                    # Buttons
-                    for i, label in enumerate(options):
-                        btn = f"[ {label} ]"
-                        btn_col = box_left + 4 + i * 18
-                        attr = curses.A_REVERSE if i == selected else curses.A_NORMAL
-                        self.stdscr.addstr(box_top + 4, btn_col, btn, attr)
-
-                self.stdscr.refresh()
-                key = self.stdscr.getch()
-
-                if key in (curses.KEY_LEFT, curses.KEY_RIGHT):
-                    selected = 1 - selected
-                elif key in (curses.KEY_ENTER, 10, 13):
-                    return selected == 1  # 1 = Abort run
-                elif key == 27:  # Escape = stay
-                    return False
-        finally:
-            curses.curs_set(1)  # Restore cursor
-            self.stdscr.timeout(100)  # Restore game tick rate
 
     def play_game(self, mode: GameMode) -> None:
         """Play a game session in the given mode.
@@ -396,8 +92,9 @@ class Game:
                     timer_str = format_duration(elapsed)
 
                     if needs_full_redraw:
-                        row = self.draw_title(
-                            f"{mode_name} - Word {words_completed + 1}/{total_words}"
+                        row = draw_title(
+                            self.stdscr,
+                            f"{mode_name} - Word {words_completed + 1}/{total_words}",
                         )
                         timer_row = row
                         row += 2  # reserve timer line + blank line
@@ -520,7 +217,7 @@ class Game:
                     if key == -1:  # Timeout - timer updated above, nothing else to do
                         continue
                     elif key == 27:  # Escape - confirm abort
-                        if self._confirm_abort():
+                        if confirm_abort(self.stdscr):
                             self.morse_player.stop()
                             end_time = datetime.now(timezone.utc)
                             run = Run(
@@ -567,136 +264,6 @@ class Game:
         duration = (end_time - start_time).total_seconds()
         self.show_completion(mode, words_completed, completed_words, duration)
 
-    def show_settings(self) -> None:
-        """Show the settings menu for editing configuration."""
-        selected = 0
-        # Settings that use free-text editing
-        text_settings = ["words_per_game", "single_letter_probability", "morse_volume"]
-        # Settings that cycle through fixed choices (setting -> list of options)
-        cycle_settings = ["morse_display_mode", "braille_grade"]
-        settings_items = text_settings + cycle_settings
-        editing: int | None = None
-        edit_buffer = ""
-
-        while True:
-            row = self.draw_title("Settings")
-
-            # Instructions
-            with contextlib.suppress(curses.error):
-                self.stdscr.addstr(row, 2, "Edit game settings:")
-            row += 2
-
-            # Setting items
-            for i, setting in enumerate(settings_items):
-                try:
-                    value = getattr(self.config, setting)
-                    if setting in ("single_letter_probability", "morse_volume"):
-                        display_value = f"{value:.0%}"
-                    elif setting == "morse_display_mode":
-                        display_value = str(value)
-                    else:
-                        display_value = str(value)
-
-                    if editing == i:
-                        # Show edit mode (only for text settings)
-                        label = f"  {setting}: "
-                        self.stdscr.addstr(row + i, 4, label)
-                        self.stdscr.attron(curses.A_UNDERLINE)
-                        self.stdscr.addstr(row + i, 4 + len(label), edit_buffer + "_")
-                        self.stdscr.attroff(curses.A_UNDERLINE)
-                    else:
-                        label = f"  {setting}: {display_value}  "
-                        if i == selected:
-                            self.stdscr.attron(curses.A_REVERSE)
-                        self.stdscr.addstr(row + i, 4, label)
-                        if i == selected:
-                            self.stdscr.attroff(curses.A_REVERSE)
-                except curses.error:
-                    pass
-
-            row += len(settings_items) + 2
-
-            # Navigation hints
-            with contextlib.suppress(curses.error):
-                if editing is not None:
-                    self.stdscr.addstr(row, 2, "Enter: save, Esc: cancel")
-                elif settings_items[selected] in cycle_settings:
-                    self.stdscr.addstr(
-                        row, 2, "Enter/Space: cycle value, Esc: back to menu"
-                    )
-                else:
-                    self.stdscr.addstr(row, 2, "Enter: edit, Esc: back to menu")
-
-            self.stdscr.refresh()
-
-            key = self.stdscr.getch()
-
-            if editing is not None:
-                # Edit mode (text settings only)
-                if key == 27:  # Escape - cancel edit
-                    editing = None
-                    edit_buffer = ""
-                elif key in (curses.KEY_ENTER, 10, 13):  # Enter - save
-                    try:
-                        setting = settings_items[editing]
-                        if setting == "words_per_game":
-                            new_value = int(edit_buffer)
-                            if new_value > 0:
-                                self.config.words_per_game = new_value
-                        elif setting == "single_letter_probability":
-                            # Accept both decimal (0.3) and percentage (30)
-                            val = float(edit_buffer)
-                            if val > 1:
-                                val = val / 100
-                            if 0 <= val <= 1:
-                                self.config.single_letter_probability = val
-                        elif setting == "morse_volume":
-                            val = float(edit_buffer)
-                            if val > 1:
-                                val = val / 100
-                            self.config.morse_volume = max(0.0, min(1.0, val))
-                        save_config(self.config)
-                    except ValueError:
-                        pass  # Invalid input, ignore
-                    editing = None
-                    edit_buffer = ""
-                elif key in (curses.KEY_BACKSPACE, 127, 8):
-                    edit_buffer = edit_buffer[:-1]
-                elif 32 <= key <= 126:  # Printable characters
-                    edit_buffer += chr(key)
-            else:
-                # Navigation mode
-                if key == 27:  # Escape - back to menu
-                    return
-                elif key == curses.KEY_UP:
-                    selected = (selected - 1) % len(settings_items)
-                elif key == curses.KEY_DOWN:
-                    selected = (selected + 1) % len(settings_items)
-                elif key in (curses.KEY_ENTER, 10, 13, ord(" ")):
-                    setting = settings_items[selected]
-                    if setting in cycle_settings:
-                        # Cycle through the fixed options
-                        if setting == "morse_display_mode":
-                            current = self.config.morse_display_mode
-                            idx = list(MORSE_DISPLAY_MODES).index(current)
-                            self.config.morse_display_mode = MORSE_DISPLAY_MODES[
-                                (idx + 1) % len(MORSE_DISPLAY_MODES)
-                            ]
-                            save_config(self.config)
-                        elif setting == "braille_grade":
-                            self.config.braille_grade = (
-                                2 if self.config.braille_grade == 1 else 1
-                            )
-                            save_config(self.config)
-                    else:
-                        editing = selected
-                        # Pre-fill with current value
-                        value = getattr(self.config, setting)
-                        if setting in ("single_letter_probability", "morse_volume"):
-                            edit_buffer = str(int(value * 100))
-                        else:
-                            edit_buffer = str(value)
-
     def show_completion(
         self,
         mode: GameMode,
@@ -712,7 +279,7 @@ class Game:
             completed_words: List of completed words.
             duration: Total run duration in seconds.
         """
-        row = self.draw_title("Session Complete!")
+        row = draw_title(self.stdscr, "Session Complete!")
         height, width = self.stdscr.getmaxyx()
 
         try:
@@ -760,11 +327,11 @@ class Game:
     def run(self) -> None:
         """Run the main game loop."""
         while True:
-            result = self.show_menu()
+            result = show_menu(self.stdscr, self.config, self.progress)
             if result is None:
                 break
             elif isinstance(result, SettingsMode):
-                self.show_settings()
+                show_settings(self.stdscr, self.config)
             else:
                 self.play_game(result)
 
