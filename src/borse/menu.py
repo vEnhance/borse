@@ -170,11 +170,6 @@ def show_menu(
                 else:
                     stdscr.attroff(curses.color_pair(4) | curses.A_DIM)
 
-        # Navigation hints
-        with contextlib.suppress(curses.error):
-            hint_row = min(row + len(menu_items) + 3, height - 2)
-            stdscr.addstr(hint_row, 2, "Use arrows + Enter, or press shortcut key.")
-
         stdscr.refresh()
 
         key = stdscr.getch()
