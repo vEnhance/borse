@@ -276,6 +276,49 @@ class Game:
                 except (ValueError, OverflowError):
                     pass
 
+    def _confirm_abort(self) -> bool:
+        """Show an abort confirmation dialog over the current screen.
+
+        Returns:
+            True if the user chose to abort, False to continue.
+        """
+        options = ["Continue run", "Abort run"]
+        selected = 1  # Default: Abort run
+
+        self.stdscr.timeout(-1)  # Blocking — no need for timer ticks here
+        try:
+            while True:
+                height, width = self.stdscr.getmaxyx()
+                mid_row = height // 2
+                mid_col = width // 2
+
+                with contextlib.suppress(curses.error):
+                    question = "Abort this run?"
+                    self.stdscr.addstr(
+                        mid_row - 2, mid_col - len(question) // 2, question
+                    )
+
+                    for i, label in enumerate(options):
+                        btn = f"[ {label} ]"
+                        col = mid_col - 16 + i * 20
+                        if i == selected:
+                            self.stdscr.attron(curses.A_REVERSE)
+                        self.stdscr.addstr(mid_row, col, btn)
+                        if i == selected:
+                            self.stdscr.attroff(curses.A_REVERSE)
+
+                self.stdscr.refresh()
+                key = self.stdscr.getch()
+
+                if key in (curses.KEY_LEFT, curses.KEY_RIGHT):
+                    selected = 1 - selected
+                elif key in (curses.KEY_ENTER, 10, 13):
+                    return selected == 1  # 1 = Abort run
+                elif key == 27:  # Escape = stay
+                    return False
+        finally:
+            self.stdscr.timeout(100)  # Restore game tick rate
+
     def play_game(self, mode: GameMode) -> None:
         """Play a game session in the given mode.
 
@@ -377,12 +420,10 @@ class Game:
                         with contextlib.suppress(curses.error):
                             if play_audio:
                                 self.stdscr.addstr(
-                                    row, 2, "Tab: replay audio  |  Esc: return to menu"
+                                    row, 2, "Tab: replay audio  |  Esc: abort run"
                                 )
                             else:
-                                self.stdscr.addstr(
-                                    row, 2, "Press Esc to return to menu"
-                                )
+                                self.stdscr.addstr(row, 2, "Press Esc to abort run")
 
                         row += 2
 
@@ -446,20 +487,22 @@ class Game:
 
                     if key == -1:  # Timeout - timer updated above, nothing else to do
                         continue
-                    elif key == 27:  # Escape
-                        self.morse_player.stop()
-                        end_time = datetime.now(timezone.utc)
-                        run = Run(
-                            mode=mode.value,
-                            start_time=start_time.isoformat(),
-                            end_time=end_time.isoformat(),
-                            num_words=words_completed,
-                            completed=False,
-                        )
-                        self.progress.add_run(run)
-                        if run.num_words > 0:
-                            save_progress(self.progress, self.config.progress_file)
-                        return
+                    elif key == 27:  # Escape - confirm abort
+                        if self._confirm_abort():
+                            self.morse_player.stop()
+                            end_time = datetime.now(timezone.utc)
+                            run = Run(
+                                mode=mode.value,
+                                start_time=start_time.isoformat(),
+                                end_time=end_time.isoformat(),
+                                num_words=words_completed,
+                                completed=False,
+                            )
+                            self.progress.add_run(run)
+                            if run.num_words > 0:
+                                save_progress(self.progress, self.config.progress_file)
+                            return
+                        needs_full_redraw = True
                     elif key == 9 and play_audio:  # Tab - replay audio
                         self.morse_player.replay()
                     elif key in (curses.KEY_BACKSPACE, 127, 8):
