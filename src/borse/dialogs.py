@@ -113,11 +113,11 @@ def show_completion(
     try:
         while True:
             height, width = stdscr.getmaxyx()
-            box_top = 1
-            box_left = 2
-            box_h = height - 2
-            box_w = width - 4
+            box_h = 13
+            box_w = 48
             inner_w = box_w - 2
+            box_top = height // 2 - box_h // 2
+            box_left = width // 2 - box_w // 2
             content_col = box_left + 2  # left padding inside box
 
             border_attr = curses.A_BOLD
