@@ -268,7 +268,6 @@ class Game:
             words_completed,
             completed_words,
             duration,
-            self.progress.get_today().total_words,
         )
 
     def run(self) -> None:

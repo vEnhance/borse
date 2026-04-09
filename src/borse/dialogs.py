@@ -95,7 +95,6 @@ def show_completion(
     words_completed: int,
     completed_words: list[str],
     duration: float,
-    today_total: int,
 ) -> None:
     """Show a completion dialog with a green border and an OK button.
 
@@ -105,7 +104,6 @@ def show_completion(
         words_completed: Number of words completed this run.
         completed_words: Ordered list of words the player typed.
         duration: Run duration in seconds.
-        today_total: Total words completed today (all modes).
     """
     from borse.progress import format_duration  # avoid circular at module level
 
@@ -130,13 +128,8 @@ def show_completion(
             row = box_top + 1
 
             with contextlib.suppress(curses.error):
-                # Summary line in green
                 summary = f"You completed {words_completed} {mode_name} words!"
-                if curses.has_colors():
-                    stdscr.attron(curses.color_pair(1))
                 stdscr.addstr(row, content_col, summary)
-                if curses.has_colors():
-                    stdscr.attroff(curses.color_pair(1))
                 row += 1
 
                 stdscr.addstr(
@@ -144,22 +137,29 @@ def show_completion(
                 )
                 row += 2
 
-                stdscr.addstr(row, content_col, f"Today's total: {today_total} words")
-                row += 2
-
-                # Completed word list, wrapped to fit
+                # Word list with consistent indentation and word-boundary wrapping
                 if completed_words:
                     stdscr.addstr(row, content_col, "Words completed:")
                     row += 1
+                    indent = "  "
+                    max_line_w = inner_w - len(indent) - 2
                     words_str = ", ".join(w.upper() for w in completed_words)
-                    max_line_w = inner_w - 2
+                    wrapped: list[str] = []
+                    line = ""
+                    for token in words_str.split(" "):
+                        candidate = f"{line} {token}".lstrip() if line else token
+                        if len(candidate) <= max_line_w:
+                            line = candidate
+                        else:
+                            wrapped.append(line)
+                            line = token
+                    if line:
+                        wrapped.append(line)
                     if curses.has_colors():
                         stdscr.attron(curses.color_pair(1))
-                    for i in range(0, len(words_str), max_line_w):
+                    for wline in wrapped:
                         if row < box_top + box_h - 3:
-                            stdscr.addstr(
-                                row, content_col, words_str[i : i + max_line_w]
-                            )
+                            stdscr.addstr(row, content_col + len(indent), wline)
                             row += 1
                     if curses.has_colors():
                         stdscr.attroff(curses.color_pair(1))
