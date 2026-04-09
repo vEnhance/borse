@@ -18,7 +18,7 @@ def show_settings(stdscr: curses.window, config: Config) -> None:
     # Settings that use free-text editing
     text_settings = ["words_per_game", "single_letter_probability", "morse_volume"]
     # Settings that cycle through fixed choices (setting -> list of options)
-    cycle_settings = ["morse_display_mode", "braille_grade"]
+    cycle_settings = ["morse_display_mode", "braille_grade", "semaphore_compact"]
     settings_items = text_settings + cycle_settings
     editing: int | None = None
     edit_buffer = ""
@@ -128,6 +128,9 @@ def show_settings(stdscr: curses.window, config: Config) -> None:
                         save_config(config)
                     elif setting == "braille_grade":
                         config.braille_grade = 2 if config.braille_grade == 1 else 1
+                        save_config(config)
+                    elif setting == "semaphore_compact":
+                        config.semaphore_compact = not config.semaphore_compact
                         save_config(config)
                 else:
                     editing = selected
