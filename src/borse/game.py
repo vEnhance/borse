@@ -83,6 +83,7 @@ class Game:
                     self.morse_player.play(word, self.config.morse_volume)
 
                 needs_full_redraw = True
+                word_complete = False
                 timer_row = 3  # row returned by draw_title; updated on first draw
                 input_row = 0  # set during first full draw
                 input_start = 17
@@ -212,6 +213,9 @@ class Game:
 
                     self.stdscr.refresh()
 
+                    if word_complete:
+                        break
+
                     key = self.stdscr.getch()
 
                     if key == -1:  # Timeout - timer updated above, nothing else to do
@@ -245,7 +249,7 @@ class Game:
                         if user_input.lower() == word.lower():
                             words_completed += 1
                             completed_words.append(word)
-                            break
+                            word_complete = True
         finally:
             self.stdscr.timeout(-1)  # Restore blocking mode
 
