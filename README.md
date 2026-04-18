@@ -40,9 +40,6 @@ which only use the upper four dots.
 That's because `K-T` are the same as `A-J` with one extra dot,
 while `UVXYZ` are `A-E` with one extra dot.
 
-In real life, Grade 2 braille has some additional contractions.
-It might be nice to add these into borse at some point.
-
 ### Remembering Morse code
 
 In Morse code, the most frequent letters are shorter.
