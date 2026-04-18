@@ -71,7 +71,6 @@ def build_share_text(progress: Progress) -> str:
         *mode_lines,
         "",
         alltime_line,
-        "",
         "Play: run [`uvx borse`](https://github.com/vEnhance/borse) in a terminal",
     ]
     return "\n".join(lines)
@@ -94,7 +93,7 @@ def show_share(stdscr: curses.window, progress: Progress) -> None:
     copied = False
 
     while True:
-        row = draw_title(stdscr, "BORSE - Daily bragging")
+        row = draw_title(stdscr, "BORSE - Share daily scores")
         _height, width = stdscr.getmaxyx()
 
         if text is None:
