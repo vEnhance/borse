@@ -6,6 +6,7 @@ import os
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 import tomli_w
 
@@ -72,7 +73,7 @@ class Config:
     single_letter_probability: float = 0.3
     morse_display_mode: str = "both"
     morse_volume: float = 1.0
-    braille_grade: int = 1
+    braille_grade: Literal[1, 2] = 1
     semaphore_compact: bool = False
 
     def to_dict(self) -> dict[str, str | int | float]:
