@@ -55,10 +55,22 @@ def build_discord_text(progress: Progress) -> str:
             f"> {emoji} {total}/{total} in {duration}{grade2_suffix}{audio_suffix}"
         )
 
+    alltime = progress.get_alltime_by_mode()
+    total = progress.get_alltime_total()
+    alltime_line = (
+        f"All-time words: {total}"
+        f" ({alltime.braille_words}"
+        f" + {alltime.morse_words}"
+        f" + {alltime.semaphore_words}"
+        f" + {alltime.a1z26_words})"
+    )
+
     lines = [
         f"Daily BORSE: {today_str} ({day_name})",
         "",
         *mode_lines,
+        "",
+        alltime_line,
         "",
         "Play: run [`uvx borse`](https://github.com/vEnhance/borse) in a terminal",
     ]

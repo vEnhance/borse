@@ -54,8 +54,8 @@ def show_menu(
         "[M] Morse Code",
         "[S] Semaphore",
         "[A] A1Z26",
-        "[D] Discord",
         "[O] Options",
+        "[D] Discord Daily",
         "[Q] Quit",
     ]
     # Fixed column for "Last run" labels — aligned past the widest mode item
