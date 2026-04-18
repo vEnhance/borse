@@ -43,7 +43,8 @@ class Run:
     num_words: int
     completed: bool
     seed: str | None = None
-    grade: Literal[1, 2] | None = None
+    braille_grade: Literal[1, 2] | None = None
+    morse_mode: str | None = None
 
     def duration_seconds(self) -> float:
         """Get the duration of this run in seconds.
@@ -90,8 +91,10 @@ class Run:
         }
         if self.seed is not None:
             d["seed"] = self.seed
-        if self.grade is not None:
-            d["grade"] = self.grade
+        if self.braille_grade is not None:
+            d["braille_grade"] = self.braille_grade
+        if self.morse_mode is not None:
+            d["morse_mode"] = self.morse_mode
         return d
 
     @classmethod
@@ -109,7 +112,7 @@ class Run:
             ValueError: If values cannot be converted to the right types.
         """
         raw_seed = data.get("seed")
-        raw_grade = data.get("grade")
+        raw_grade = data.get("braille_grade")
         return cls(
             mode=str(data["mode"]),
             start_time=str(data["start_time"]),
@@ -117,7 +120,8 @@ class Run:
             num_words=int(data["num_words"]),
             completed=bool(data["completed"]),
             seed=str(raw_seed) if raw_seed is not None else None,
-            grade=raw_grade if raw_grade in (1, 2) else None,
+            braille_grade=raw_grade if raw_grade in (1, 2) else None,
+            morse_mode=str(data["morse_mode"]) if "morse_mode" in data else None,
         )
 
 

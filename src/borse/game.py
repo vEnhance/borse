@@ -248,8 +248,11 @@ class Game:
                                 num_words=words_completed,
                                 completed=False,
                                 seed=seed,
-                                grade=self.config.braille_grade
+                                braille_grade=self.config.braille_grade
                                 if mode == GameMode.BRAILLE
+                                else None,
+                                morse_mode=self.config.morse_display_mode
+                                if mode == GameMode.MORSE
                                 else None,
                             )
                             self.progress.add_run(run)
@@ -283,7 +286,12 @@ class Game:
             num_words=words_completed,
             completed=True,
             seed=seed,
-            grade=self.config.braille_grade if mode == GameMode.BRAILLE else None,
+            braille_grade=self.config.braille_grade
+            if mode == GameMode.BRAILLE
+            else None,
+            morse_mode=self.config.morse_display_mode
+            if mode == GameMode.MORSE
+            else None,
         )
         self.progress.add_run(run)
         save_progress(self.progress, self.config.progress_file)

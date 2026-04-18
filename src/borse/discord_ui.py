@@ -40,7 +40,7 @@ def build_discord_text(progress: Progress) -> str:
     today = date.today()
     today_str = today.isoformat()
     day_name = _DAY_NAMES[today.weekday()]
-    lines = [f"Daily BORSE: {today_str} ({day_name})"]
+    mode_lines = []
 
     for mode in GameMode:
         run = progress.get_first_completed_run_today(mode.value)
@@ -49,12 +49,19 @@ def build_discord_text(progress: Progress) -> str:
         emoji = _MODE_EMOJI[mode]
         total = run.num_words
         duration = run.format_duration()
-        grade2_suffix = " (Grade 2)" if run.grade == 2 else ""
-        lines.append(f"{emoji} {total}/{total} in {duration}{grade2_suffix}")
+        grade2_suffix = " (grade 2)" if run.braille_grade == 2 else ""
+        audio_suffix = " (audio only)" if run.morse_mode == "audio" else ""
+        mode_lines.append(
+            f"> {emoji} {total}/{total} in {duration}{grade2_suffix}{audio_suffix}"
+        )
 
-    lines.append(
-        "Play: run [`uvx borse`](https://github.com/vEnhance/borse) in a terminal"
-    )
+    lines = [
+        f"Daily BORSE: {today_str} ({day_name})",
+        "",
+        *mode_lines,
+        "",
+        "Play: run [`uvx borse`](https://github.com/vEnhance/borse) in a terminal",
+    ]
     return "\n".join(lines)
 
 
@@ -75,16 +82,16 @@ def show_discord(stdscr: curses.window, progress: Progress) -> None:
     copied = False
 
     while True:
-        row = draw_title(stdscr, "BORSE - Discord Share")
+        row = draw_title(stdscr, "BORSE - Discord daily posting")
         _height, width = stdscr.getmaxyx()
 
         if text is None:
             with contextlib.suppress(curses.error):
-                stdscr.addstr(row, 2, "No completed runs today — nothing to post yet!")
+                stdscr.addstr(row, 2, "No completed runs today! Nothing to post.")
             row += 2
         else:
             with contextlib.suppress(curses.error):
-                stdscr.addstr(row, 2, "Copy and paste this into Discord:")
+                stdscr.addstr(row, 2, "idk why dailies are a thing but here we are:")
             row += 2
 
             for line in text.splitlines():
