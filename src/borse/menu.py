@@ -51,11 +51,11 @@ def show_menu(
     modes = list(GameMode)
     menu_items = [
         "[B] Braille",
-        "[M] Morse Code",
+        "[M] Morse code",
         "[S] Semaphore",
         "[A] A1Z26",
         "[O] Options",
-        "[D] Daily Share",
+        "[D] Daily share",
         "[Q] Quit",
     ]
     # Fixed column for "Last run" labels — aligned past the widest mode item
