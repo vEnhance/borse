@@ -107,7 +107,7 @@ class Config:
         raw_vol = float(data.get("morse_volume", 1.0))
         morse_volume = max(0.0, min(1.0, raw_vol))
         raw_grade = int(data.get("braille_grade", 1))
-        braille_grade = raw_grade if raw_grade in (1, 2) else 1
+        braille_grade = 2 if raw_grade == 2 else 1
         return cls(
             progress_file=str(
                 data.get("progress_file", str(get_default_progress_path()))
