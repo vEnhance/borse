@@ -248,6 +248,9 @@ class Game:
                                 num_words=words_completed,
                                 completed=False,
                                 seed=seed,
+                                grade=self.config.braille_grade
+                                if mode == GameMode.BRAILLE
+                                else None,
                             )
                             self.progress.add_run(run)
                             if run.num_words > 0:
@@ -280,6 +283,7 @@ class Game:
             num_words=words_completed,
             completed=True,
             seed=seed,
+            grade=self.config.braille_grade if mode == GameMode.BRAILLE else None,
         )
         self.progress.add_run(run)
         save_progress(self.progress, self.config.progress_file)

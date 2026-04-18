@@ -49,7 +49,8 @@ def build_discord_text(progress: Progress) -> str:
         emoji = _MODE_EMOJI[mode]
         total = run.num_words
         duration = run.format_duration()
-        lines.append(f"{emoji} {total}/{total} in {duration}")
+        grade2_suffix = " (Grade 2)" if run.grade == 2 else ""
+        lines.append(f"{emoji} {total}/{total} in {duration}{grade2_suffix}")
 
     lines.append(
         "Play: run [`uvx borse`](https://github.com/vEnhance/borse) in a terminal"

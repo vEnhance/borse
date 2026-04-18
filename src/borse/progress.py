@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 
 def format_duration(seconds: float) -> str:
@@ -43,6 +43,7 @@ class Run:
     num_words: int
     completed: bool
     seed: str | None = None
+    grade: Literal[1, 2] | None = None
 
     def duration_seconds(self) -> float:
         """Get the duration of this run in seconds.
@@ -89,6 +90,8 @@ class Run:
         }
         if self.seed is not None:
             d["seed"] = self.seed
+        if self.grade is not None:
+            d["grade"] = self.grade
         return d
 
     @classmethod
@@ -106,6 +109,7 @@ class Run:
             ValueError: If values cannot be converted to the right types.
         """
         raw_seed = data.get("seed")
+        raw_grade = data.get("grade")
         return cls(
             mode=str(data["mode"]),
             start_time=str(data["start_time"]),
@@ -113,6 +117,7 @@ class Run:
             num_words=int(data["num_words"]),
             completed=bool(data["completed"]),
             seed=str(raw_seed) if raw_seed is not None else None,
+            grade=raw_grade if raw_grade in (1, 2) else None,
         )
 
 
