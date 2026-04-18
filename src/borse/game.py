@@ -39,7 +39,7 @@ class Game:
         self.session_start_time = datetime.now(timezone.utc).isoformat()
 
         # Setup curses
-        curses.curs_set(1)  # Show cursor
+        curses.curs_set(0)  # Hide cursor by default; shown during gameplay
         curses.use_default_colors()
         self.stdscr.keypad(True)
 
@@ -79,6 +79,7 @@ class Game:
 
         # Non-blocking getch so the timer refreshes smoothly
         self.stdscr.timeout(100)
+        curses.curs_set(1)
 
         try:
             while words_completed < total_words:
@@ -276,6 +277,7 @@ class Game:
                             word_complete = True
         finally:
             self.stdscr.timeout(-1)  # Restore blocking mode
+            curses.curs_set(0)
 
         # All words completed
         end_time = datetime.now(timezone.utc)
