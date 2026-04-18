@@ -113,7 +113,7 @@ class Game:
                     if needs_full_redraw:
                         row = draw_title(
                             self.stdscr,
-                            f"{mode_name} - Word {words_completed + 1}/{total_words}",
+                            f"BORSE - {mode_name} - Word {words_completed + 1}/{total_words}",
                         )
                         timer_row = row
                         row += 2  # reserve timer line + blank line

@@ -24,11 +24,11 @@ def show_settings(stdscr: curses.window, config: Config) -> None:
     edit_buffer = ""
 
     while True:
-        row = draw_title(stdscr, "Settings")
+        row = draw_title(stdscr, "BORSE - Options")
 
         # Instructions
         with contextlib.suppress(curses.error):
-            stdscr.addstr(row, 2, "Edit game settings:")
+            stdscr.addstr(row, 2, "Edit game options:")
         row += 2
 
         # Setting items

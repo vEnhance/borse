@@ -33,7 +33,7 @@ MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
 
 MODE_NAMES: dict[GameMode, str] = {
     GameMode.BRAILLE: "Braille",
-    GameMode.MORSE: "Morse Code",
+    GameMode.MORSE: "Morse code",
     GameMode.SEMAPHORE: "Semaphore",
     GameMode.A1Z26: "A1Z26",
 }
