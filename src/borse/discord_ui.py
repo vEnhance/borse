@@ -11,10 +11,10 @@ from borse.modes import GameMode
 from borse.progress import Progress
 
 _MODE_EMOJI = {
-    GameMode.BRAILLE: ":yellow_circle:",
-    GameMode.MORSE: ":telephone:",
-    GameMode.SEMAPHORE: ":golf:",
-    GameMode.A1Z26: ":1234:",
+    GameMode.BRAILLE: "🟡",
+    GameMode.MORSE: "📢",
+    GameMode.SEMAPHORE: "🚩",
+    GameMode.A1Z26: "🔢",
 }
 
 _DAY_NAMES = [
@@ -94,7 +94,7 @@ def show_discord(stdscr: curses.window, progress: Progress) -> None:
     copied = False
 
     while True:
-        row = draw_title(stdscr, "BORSE - Discord daily posting")
+        row = draw_title(stdscr, "BORSE - Daily bragging")
         _height, width = stdscr.getmaxyx()
 
         if text is None:
