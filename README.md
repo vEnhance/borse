@@ -60,7 +60,7 @@ for the first three rows (you're on your own for the last one):
 - `IANM`: I Am Not Mad
 - `SURWDKGO`: [SuperUser][su] [ReWrote][rw] [DynamicKernel][dk] in [GO][go]
 
-(Also, `surdwkgo` is also the name of a
+(Also, `surwdkgo` is also the name of a
 [Taiwanese CodeForces grandmaster](https://codeforces.com/profile/surwdkgo).)
 
 If you're learning Morse code for _actual_ usage rather than puzzle hunt usage
