@@ -6,7 +6,7 @@ from datetime import date
 
 from borse.__about__ import __version__
 from borse.config import Config
-from borse.modes import MODE_SHORTCUTS, GameMode, SettingsMode
+from borse.modes import MODE_SHORTCUTS, DiscordMode, GameMode, SettingsMode
 from borse.progress import DailyProgress, Progress, format_duration
 
 
@@ -36,7 +36,7 @@ def show_menu(
     stdscr: curses.window,
     config: Config,
     progress: Progress,
-) -> GameMode | SettingsMode | None:
+) -> GameMode | SettingsMode | DiscordMode | None:
     """Show the main menu and return the user's selection.
 
     Args:
@@ -54,6 +54,7 @@ def show_menu(
         "[M] Morse Code",
         "[S] Semaphore",
         "[A] A1Z26",
+        "[D] Discord",
         "[O] Options",
         "[Q] Quit",
     ]
@@ -185,13 +186,17 @@ def show_menu(
         elif key in (curses.KEY_ENTER, 10, 13):
             if selected < len(modes):
                 return modes[selected]
-            elif selected == len(modes):  # Settings
+            elif selected == len(modes):  # Discord
+                return DiscordMode.DISCORD
+            elif selected == len(modes) + 1:  # Options
                 return SettingsMode.SETTINGS
             return None  # Quit
         elif key == ord("q") or key == ord("Q"):
             return None
         elif key == ord("o") or key == ord("O"):
             return SettingsMode.SETTINGS
+        elif key == ord("d") or key == ord("D"):
+            return DiscordMode.DISCORD
         else:
             # Check for shortcut keys
             try:

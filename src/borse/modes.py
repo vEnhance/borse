@@ -19,6 +19,10 @@ class SettingsMode(Enum):
     SETTINGS = "settings"
 
 
+class DiscordMode(Enum):
+    DISCORD = "discord"
+
+
 # Map modes to their display functions
 MODE_DISPLAY_FUNCS: dict[GameMode, Callable[[str], list[str]]] = {
     GameMode.BRAILLE: braille.get_display_lines,

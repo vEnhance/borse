@@ -2,13 +2,21 @@
 
 import contextlib
 import curses
-from datetime import datetime, timezone
+import random
+from datetime import date, datetime, timezone
 
 from borse import braille, semaphore
 from borse.config import load_config
 from borse.dialogs import confirm_abort, show_completion
+from borse.discord_ui import show_discord
 from borse.menu import draw_title, show_menu
-from borse.modes import MODE_DISPLAY_FUNCS, MODE_NAMES, GameMode, SettingsMode
+from borse.modes import (
+    MODE_DISPLAY_FUNCS,
+    MODE_NAMES,
+    DiscordMode,
+    GameMode,
+    SettingsMode,
+)
 from borse.morse_audio import MorsePlayer
 from borse.progress import Run, format_duration, load_progress, save_progress
 from borse.settings_ui import show_settings
@@ -60,6 +68,15 @@ class Game:
         completed_words: list[str] = []  # Track completed words
         start_time = datetime.now(timezone.utc)
 
+        # Build a deterministic seed so two players on the same day see the same words
+        today_str = date.today().isoformat()
+        run_index = self.progress.count_today_runs(mode.value)
+        if mode == GameMode.BRAILLE:
+            seed = f"{today_str}-braille-grade{self.config.braille_grade}-v{run_index}"
+        else:
+            seed = f"{today_str}-{mode.value}-v{run_index}"
+        rng = random.Random(seed)
+
         # Non-blocking getch so the timer refreshes smoothly
         self.stdscr.timeout(100)
 
@@ -71,7 +88,7 @@ class Game:
                         braille.GRADE2_WORD_CONTRACTIONS
                     )
                 word = get_random_word_or_letter(
-                    self.config.single_letter_probability, extra_glyphs
+                    self.config.single_letter_probability, extra_glyphs, rng=rng
                 )
                 user_input = ""
                 morse_mode = self.config.morse_display_mode
@@ -230,6 +247,7 @@ class Game:
                                 end_time=end_time.isoformat(),
                                 num_words=words_completed,
                                 completed=False,
+                                seed=seed,
                             )
                             self.progress.add_run(run)
                             if run.num_words > 0:
@@ -261,6 +279,7 @@ class Game:
             end_time=end_time.isoformat(),
             num_words=words_completed,
             completed=True,
+            seed=seed,
         )
         self.progress.add_run(run)
         save_progress(self.progress, self.config.progress_file)
@@ -282,6 +301,8 @@ class Game:
                 break
             elif isinstance(result, SettingsMode):
                 show_settings(self.stdscr, self.config)
+            elif isinstance(result, DiscordMode):
+                show_discord(self.stdscr, self.progress)
             else:
                 self.play_game(result)
 

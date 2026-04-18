@@ -42,6 +42,7 @@ class Run:
     end_time: str
     num_words: int
     completed: bool
+    seed: str | None = None
 
     def duration_seconds(self) -> float:
         """Get the duration of this run in seconds.
@@ -79,13 +80,16 @@ class Run:
         Returns:
             Dictionary representation.
         """
-        return {
+        d: dict[str, object] = {
             "mode": self.mode,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "num_words": self.num_words,
             "completed": self.completed,
         }
+        if self.seed is not None:
+            d["seed"] = self.seed
+        return d
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Run:
@@ -101,12 +105,14 @@ class Run:
             KeyError: If required keys are missing.
             ValueError: If values cannot be converted to the right types.
         """
+        raw_seed = data.get("seed")
         return cls(
             mode=str(data["mode"]),
             start_time=str(data["start_time"]),
             end_time=str(data["end_time"]),
             num_words=int(data["num_words"]),
             completed=bool(data["completed"]),
+            seed=str(raw_seed) if raw_seed is not None else None,
         )
 
 
@@ -190,6 +196,33 @@ class Progress:
             ),
             a1z26_words=sum(r.num_words for r in self.runs if r.mode == "a1z26"),
         )
+
+    def count_today_runs(self, mode: str) -> int:
+        """Count today's runs (any completion status) for a given mode.
+
+        Args:
+            mode: The game mode string.
+
+        Returns:
+            Number of runs today for this mode.
+        """
+        today_str = date.today().isoformat()
+        return sum(1 for r in self.runs if r.mode == mode and r.date_str == today_str)
+
+    def get_first_completed_run_today(self, mode: str) -> Run | None:
+        """Get the first completed run today for a given mode.
+
+        Args:
+            mode: The game mode string.
+
+        Returns:
+            The first completed Run today, or None if none exist.
+        """
+        today_str = date.today().isoformat()
+        for r in self.runs:
+            if r.mode == mode and r.completed and r.date_str == today_str:
+                return r
+        return None
 
     def get_last_completed_run(self, mode: str) -> Run | None:
         """Get the most recent completed run for a given mode.
