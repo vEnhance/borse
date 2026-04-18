@@ -1,4 +1,4 @@
-"""Discord share screen for Borse."""
+"""Daily share screen for Borse."""
 
 import contextlib
 import curses
@@ -28,14 +28,14 @@ _DAY_NAMES = [
 ]
 
 
-def build_discord_text(progress: Progress) -> str:
-    """Build the Discord share text for today's first runs.
+def build_share_text(progress: Progress) -> str:
+    """Build the daily share text for today's first runs.
 
     Args:
         progress: Player progress data.
 
     Returns:
-        Formatted text blob ready to paste into Discord.
+        Formatted text blob ready to share.
     """
     today = date.today()
     today_str = today.isoformat()
@@ -82,15 +82,15 @@ def _has_runs_today(progress: Progress) -> bool:
     return any(r.completed and r.date_str == today_str for r in progress.runs)
 
 
-def show_discord(stdscr: curses.window, progress: Progress) -> None:
-    """Show the Discord share screen.
+def show_share(stdscr: curses.window, progress: Progress) -> None:
+    """Show the daily share screen.
 
     Args:
         stdscr: The curses window.
         progress: Player progress data.
     """
     has_runs = _has_runs_today(progress)
-    text = build_discord_text(progress) if has_runs else None
+    text = build_share_text(progress) if has_runs else None
     copied = False
 
     while True:

@@ -19,8 +19,8 @@ class SettingsMode(Enum):
     SETTINGS = "settings"
 
 
-class DiscordMode(Enum):
-    DISCORD = "discord"
+class ShareMode(Enum):
+    SHARE = "share"
 
 
 # Map modes to their display functions

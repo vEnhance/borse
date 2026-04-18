@@ -8,18 +8,18 @@ from datetime import date, datetime, timezone
 from borse import braille, semaphore
 from borse.config import load_config
 from borse.dialogs import confirm_abort, show_completion
-from borse.discord_ui import show_discord
 from borse.menu import draw_title, show_menu
 from borse.modes import (
     MODE_DISPLAY_FUNCS,
     MODE_NAMES,
-    DiscordMode,
     GameMode,
     SettingsMode,
+    ShareMode,
 )
 from borse.morse_audio import MorsePlayer
 from borse.progress import Run, format_duration, load_progress, save_progress
 from borse.settings_ui import show_settings
+from borse.share_ui import show_share
 from borse.words import get_random_word_or_letter
 
 
@@ -315,8 +315,8 @@ class Game:
                 break
             elif isinstance(result, SettingsMode):
                 show_settings(self.stdscr, self.config)
-            elif isinstance(result, DiscordMode):
-                show_discord(self.stdscr, self.progress)
+            elif isinstance(result, ShareMode):
+                show_share(self.stdscr, self.progress)
             else:
                 self.play_game(result)
 
