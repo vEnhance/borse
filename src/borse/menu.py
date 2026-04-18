@@ -186,10 +186,10 @@ def show_menu(
         elif key in (curses.KEY_ENTER, 10, 13):
             if selected < len(modes):
                 return modes[selected]
-            elif selected == len(modes):  # Discord
-                return ShareMode.SHARE
-            elif selected == len(modes) + 1:  # Options
+            elif selected == len(modes):  # Options
                 return SettingsMode.SETTINGS
+            elif selected == len(modes) + 1:  # Daily share
+                return ShareMode.SHARE
             return None  # Quit
         elif key == ord("q") or key == ord("Q"):
             return None
