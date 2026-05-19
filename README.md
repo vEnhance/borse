@@ -119,6 +119,10 @@ uv run prek --all-files # run linter
 uv run prek --all-files --hook-stage pre-push
 ```
 
+## Rust port
+
+[Dean Menzenes maintains a Rust port named `borse-rs`](https://github.com/menezesd/borse-rs/tree/master).
+
 ## FAQ
 
 - _Where does the name come from?_
