@@ -110,7 +110,9 @@ class Config:
         braille_grade = 2 if raw_grade == 2 else 1
         return cls(
             progress_file=str(
-                data.get("progress_file", str(get_default_progress_path()))
+                Path(
+                    str(data.get("progress_file", str(get_default_progress_path())))
+                ).expanduser()
             ),
             words_per_game=int(data.get("words_per_game", 15)),
             single_letter_probability=float(data.get("single_letter_probability", 0.3)),

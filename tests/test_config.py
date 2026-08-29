@@ -40,6 +40,12 @@ class TestConfig:
         assert config.words_per_game == 15
         assert config.single_letter_probability == 0.7
 
+    def test_from_dict_expands_tilde_in_progress_file(self) -> None:
+        """Test that a ~ in progress_file is expanded to the home directory."""
+        config = Config.from_dict({"progress_file": "~/custom/path.json"})
+        assert config.progress_file == str(Path.home() / "custom" / "path.json")
+        assert "~" not in config.progress_file
+
     def test_from_dict_with_missing_values(self) -> None:
         """Test creating config with missing values uses defaults."""
         config = Config.from_dict({})
